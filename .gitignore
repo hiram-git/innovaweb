@@ -1,0 +1,44 @@
+# ─── Sistema operativo ────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ─── IDEs ─────────────────────────────────────────────────────────────────────
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+
+# ─── PHP / Monolito legacy ────────────────────────────────────────────────────
+# Logs del sistema legacy
+logs/
+*.log
+error_grabar_factura.txt
+
+# XMLs generados por FEL (pueden contener datos sensibles)
+fel/thfkapanama/request/
+fel/digifact/request/
+
+# ─── Laravel backend ──────────────────────────────────────────────────────────
+# El .gitignore del backend/ maneja sus propias exclusiones,
+# pero duplicamos las críticas aquí por seguridad:
+backend/.env
+backend/.env.backup
+backend/.env.production
+backend/storage/logs/
+backend/storage/framework/cache/
+backend/storage/framework/sessions/
+backend/storage/framework/views/
+backend/storage/app/public/
+backend/bootstrap/cache/
+backend/vendor/
+
+# XMLs de log de FEL del backend
+backend/storage/logs/fe_xml/
+
+# ─── Node / Frontend (cuando se cree) ─────────────────────────────────────────
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+frontend/.env.local
+frontend/.env.production
