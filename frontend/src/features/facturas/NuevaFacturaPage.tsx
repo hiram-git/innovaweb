@@ -59,7 +59,7 @@ function ClienteSelector({ onSelect }: { onSelect: (c: Cliente) => void }) {
       {open && data && data.length > 0 && (
         <ul className="absolute z-20 mt-1 w-full rounded-lg border border-slate-700 bg-slate-900 shadow-xl max-h-52 overflow-y-auto">
           {data.map(c => (
-            <li key={c.CODCLIENTE}>
+            <li key={c.CODIGO}>
               <button
                 type="button"
                 onClick={() => { onSelect(c); setQ(c.NOMBRE ?? ''); setOpen(false) }}
@@ -96,7 +96,7 @@ function AgregarItemForm({ onAdd }: { onAdd: (i: ItemFactura) => void }) {
     setValue('codpro',  p.CODPRO)
     setValue('descrip', p.DESCRIP1)
     setValue('precio',  Number(p.PRECVEN1 ?? 0))
-    setValue('imppor',  Number(p.ITBMSPOR ?? 7))
+    setValue('imppor',  Number(p.IMPPOR ?? 7))
     setQ(p.DESCRIP1)
     setOpen(false)
   }
@@ -318,7 +318,7 @@ export function NuevaFacturaPage() {
     }
 
     const payload: NuevaFacturaPayload = {
-      codcliente:      cliente.CODCLIENTE,
+      codcliente:      cliente.CODIGO,
       tipoFactura,
       diasVencimiento: tipoFactura === 'CREDITO' ? diasVencimiento : 0,
       descuentoGlobal,
@@ -360,7 +360,7 @@ export function NuevaFacturaPage() {
             <div><span className="text-slate-400 text-xs">Nombre</span><p className="text-white font-medium">{cliente.NOMBRE}</p></div>
             <div><span className="text-slate-400 text-xs">RUC</span><p className="text-white font-mono">{cliente.RIF}</p></div>
             <div><span className="text-slate-400 text-xs">Tipo</span><p className="text-white">{cliente.TIPOCLI}</p></div>
-            <div><span className="text-slate-400 text-xs">Teléfono</span><p className="text-white">{cliente.TEL1 ?? '—'}</p></div>
+            <div><span className="text-slate-400 text-xs">Teléfono</span><p className="text-white">{cliente.NUMTEL ?? '—'}</p></div>
           </div>
         )}
       </section>
