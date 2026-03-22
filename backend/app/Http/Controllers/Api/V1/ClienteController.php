@@ -16,12 +16,32 @@ class ClienteController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        $query = $request->query('q', '');
+        $q       = $request->query('q', '');
         $perPage = min((int) $request->query('per_page', 20), 100);
+        $page    = max(1, (int) $request->query('page', 1));
+        $offset  = ($page - 1) * $perPage;
+
+        $where  = ["cp.TIPREG = '1'", "cp.INTEGRADO = '0'"];
+        $params = [];
+
+        if ($q) {
+            $where[]       = "(cp.NOMBRE LIKE :q OR cp.RIF LIKE :q2 OR cp.CODIGO LIKE :q3)";
+            $params['q']   = "%{$q}%";
+            $params['q2']  = "%{$q}%";
+            $params['q3']  = "%{$q}%";
+        }
+
+        $whereStr = implode(' AND ', $where);
+
+        $total = (int) (DB::selectOne(
+            "SELECT COUNT(*) AS total FROM BASECLIENTESPROVEEDORES cp WHERE {$whereStr}", $params
+        )?->total ?? 0);
+
+        $params['limit']  = $perPage;
+        $params['offset'] = $offset;
 
         $clientes = DB::select(
-            "SELECT TOP (:limit)
-                cp.CODIGO, cp.NOMBRE, cp.RIF, cp.NIT,
+            "SELECT cp.CODIGO, cp.NOMBRE, cp.RIF, cp.NIT,
                 cp.DIRECC1, cp.NUMTEL, cp.DIRCORREO,
                 cp.TIPOCLI, cp.TIPOCOMERCIO, cp.DIASCRE,
                 cp.CONESPECIAL, cp.PORRETIMP,
@@ -37,21 +57,19 @@ class ClienteController extends Controller
                     ON bc.NOMBREEGEO3 = cp.NOMBREEGEO3
                    AND bc.NOMBREEGEO2 = cp.NOMBREEGEO2
                    AND bc.NOMBREEGEO1 = cp.NOMBREEGEO1
-             WHERE cp.TIPREG = '1'
-               AND cp.INTEGRADO = '0'
-               AND (cp.NOMBRE LIKE :q OR cp.RIF LIKE :q2 OR cp.CODIGO LIKE :q3)
-             ORDER BY cp.NOMBRE",
-            [
-                'limit' => $perPage,
-                'q'     => "%{$query}%",
-                'q2'    => "%{$query}%",
-                'q3'    => "%{$query}%",
-            ]
+             WHERE {$whereStr}
+             ORDER BY cp.NOMBRE
+             OFFSET :offset ROWS FETCH NEXT :limit ROWS ONLY", $params
         );
 
         return response()->json([
             'data' => $clientes,
-            'meta' => ['per_page' => $perPage, 'query' => $query],
+            'meta' => [
+                'total'        => $total,
+                'per_page'     => $perPage,
+                'current_page' => $page,
+                'last_page'    => (int) ceil($total / max(1, $perPage)),
+            ],
         ]);
     }
 

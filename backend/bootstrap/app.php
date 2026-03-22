@@ -21,9 +21,10 @@ return Application::configure(basePath: dirname(__DIR__))
 
         // Spatie Permission: registrar middlewares de roles
         $middleware->alias([
-            'role'       => \Spatie\Permission\Middleware\RoleMiddleware::class,
-            'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
+            'role'            => \Spatie\Permission\Middleware\RoleMiddleware::class,
+            'permission'      => \Spatie\Permission\Middleware\PermissionMiddleware::class,
             'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
+            'cache.headers'   => \App\Http\Middleware\CacheHeaders::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

@@ -1,7 +1,10 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
-import { Plus, Search, FileText, Send, CheckCircle, XCircle, Clock } from 'lucide-react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import {
+  Plus, Search, FileText, Send, CheckCircle, XCircle, Clock,
+  Printer, FileDown, Trash2, Loader2,
+} from 'lucide-react'
 import { api } from '@/lib/axios'
 import { Badge } from '@/components/ui/Badge'
 import { Spinner } from '@/components/ui/Spinner'
@@ -19,9 +22,83 @@ function feStatusBadge(estado: string | null): { label: string; color: FEEstadoB
   }
 }
 
+function openBase64Pdf(b64: string, filename: string) {
+  const binary = atob(b64)
+  const bytes  = new Uint8Array(binary.length)
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
+  const blob = new Blob([bytes], { type: 'application/pdf' })
+  const url  = URL.createObjectURL(blob)
+  const win  = window.open(url, '_blank')
+  win?.document.title !== undefined && (win.document.title = filename)
+  setTimeout(() => URL.revokeObjectURL(url), 60_000)
+}
+
+function openTicketWindow(data: {
+  maestro: Record<string, unknown>
+  detalles: Record<string, unknown>[]
+  qr: string | null
+}) {
+  const { maestro, detalles, qr } = data
+  const win = window.open('', '_blank', 'width=400,height=700')
+  if (!win) return
+  const rows = detalles.map(d =>
+    `<tr>
+       <td style="font-size:11px;padding:1px 0">${String(d.DESCRIP1 ?? '')}</td>
+       <td style="font-size:11px;text-align:right">${Number(d.CANTIDAD ?? 0).toFixed(2)}</td>
+       <td style="font-size:11px;text-align:right">${Number(d.PRECOSUNI ?? 0).toFixed(2)}</td>
+       <td style="font-size:11px;text-align:right">${Number(d.COSTOADU1 ?? 0).toFixed(2)}</td>
+     </tr>`
+  ).join('')
+  win.document.write(`<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Ticket ${String(maestro.NUMREF ?? '')}</title>
+  <style>
+    body { font-family: monospace; font-size: 12px; margin: 0; padding: 8px; width: 72mm; }
+    h2   { text-align: center; font-size: 13px; margin: 4px 0; }
+    p    { margin: 2px 0; font-size: 11px; }
+    hr   { border: none; border-top: 1px dashed #000; margin: 4px 0; }
+    table{ width: 100%; border-collapse: collapse; }
+    th   { font-size: 10px; text-align: left; border-bottom: 1px dashed #000; padding-bottom: 2px; }
+    .total { font-size: 13px; font-weight: bold; }
+    img  { display: block; margin: 4px auto; max-width: 120px; }
+    @media print { body { margin: 0; } button { display: none; } }
+  </style>
+</head>
+<body>
+  <h2>InnovaWeb</h2>
+  <hr/>
+  <p><b>Factura:</b> ${String(maestro.NUMREF ?? '')}</p>
+  <p><b>Cliente:</b> ${String(maestro.NOMBRE ?? '')}</p>
+  <p><b>Fecha:</b>   ${String(maestro.FECEMIS ?? '').slice(0, 10)}</p>
+  <hr/>
+  <table>
+    <thead>
+      <tr>
+        <th>Descripción</th><th style="text-align:right">Cant</th>
+        <th style="text-align:right">P.Unit</th><th style="text-align:right">Total</th>
+      </tr>
+    </thead>
+    <tbody>${rows}</tbody>
+  </table>
+  <hr/>
+  <p class="total" style="text-align:right">TOTAL: B/. ${Number(maestro.MONTOTOT ?? 0).toFixed(2)}</p>
+  <p style="text-align:right;font-size:11px">ITBMS: B/. ${Number(maestro.MONTOIMP ?? 0).toFixed(2)}</p>
+  ${qr ? `<hr/><img src="${qr}" alt="QR DGI"/>` : ''}
+  <hr/>
+  <p style="text-align:center;font-size:10px">Gracias por su compra</p>
+  <button onclick="window.print()" style="margin-top:8px;width:100%">🖨 Imprimir</button>
+</body>
+</html>`)
+  win.document.close()
+}
+
 export function FacturasPage() {
   const [search, setSearch] = useState('')
   const [page, setPage]     = useState(1)
+  const [actionId, setActionId] = useState<string | null>(null)
+  const queryClient = useQueryClient()
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ['facturas', search, page],
@@ -32,9 +109,43 @@ export function FacturasPage() {
     placeholderData: prev => prev,
   })
 
-  const facturas  = data?.data    ?? []
-  const lastPage  = data?.meta?.last_page ?? 1
-  const total     = data?.meta?.total     ?? 0
+  // Acción: imprimir ticket
+  const ticketMutation = useMutation({
+    mutationFn: (id: string) => api.get(`/facturas/${id}/ticket`).then(r => r.data.data),
+    onSuccess: (data) => openTicketWindow(data),
+  })
+
+  // Acción: descargar/ver PDF DGI
+  const pdfMutation = useMutation({
+    mutationFn: (id: string) => api.get(`/facturas/${id}/pdf`).then(r => r.data),
+    onSuccess: (data) => {
+      if (data.tipo === 'dgi') {
+        openBase64Pdf(data.pdf, `Factura-${data.numdocfiscal ?? 'DGI'}.pdf`)
+      } else {
+        alert('Esta factura aún no tiene PDF de la DGI. Envíela por el módulo de Facturación Electrónica.')
+      }
+    },
+  })
+
+  // Acción: anular factura
+  const anularMutation = useMutation({
+    mutationFn: (id: string) => api.delete(`/facturas/${id}`).then(r => r.data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['facturas'] })
+      setActionId(null)
+    },
+  })
+
+  const handleAnular = (id: string, nrofac: string | null) => {
+    if (!confirm(`¿Confirma que desea anular la factura ${nrofac ?? id}? Esta acción no se puede deshacer.`)) return
+    anularMutation.mutate(id)
+  }
+
+  const facturas = data?.data    ?? []
+  const lastPage = data?.meta?.last_page ?? 1
+  const total    = data?.meta?.total     ?? 0
+
+  const isActing = (id: string) => actionId === id && (ticketMutation.isPending || pdfMutation.isPending || anularMutation.isPending)
 
   return (
     <div className="space-y-4">
@@ -65,6 +176,16 @@ export function FacturasPage() {
         />
       </div>
 
+      {/* Error banner */}
+      {(anularMutation.isError || pdfMutation.isError || ticketMutation.isError) && (
+        <div className="rounded-lg bg-red-900/30 border border-red-700 px-4 py-3 text-sm text-red-400">
+          {(anularMutation.error as Error)?.message
+            ?? (pdfMutation.error as Error)?.message
+            ?? (ticketMutation.error as Error)?.message
+            ?? 'Error al procesar la acción'}
+        </div>
+      )}
+
       {/* Table */}
       {isLoading ? (
         <div className="flex justify-center py-12"><Spinner /></div>
@@ -88,13 +209,18 @@ export function FacturasPage() {
                   <th className="px-4 py-3 text-right">Saldo</th>
                   <th className="px-4 py-3 text-center">Tipo</th>
                   <th className="px-4 py-3 text-center">FE</th>
+                  <th className="px-4 py-3 text-center">Acciones</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800">
                 {facturas.map((f) => {
-                  const fe = feStatusBadge(f.FE_ESTADO ?? null)
+                  const fe      = feStatusBadge(f.FE_ESTADO ?? null)
+                  const rowId   = f.CONTROLMAESTRO
+                  const b64Id   = btoa(f.CONTROLMAESTRO)
+                  const acting  = isActing(rowId)
+
                   return (
-                    <tr key={f.CONTROLMAESTRO} className="bg-slate-900 hover:bg-slate-800 transition-colors">
+                    <tr key={rowId} className="bg-slate-900 hover:bg-slate-800 transition-colors">
                       <td className="px-4 py-3 font-mono text-blue-400">{f.NROFAC}</td>
                       <td className="px-4 py-3 text-white max-w-[200px] truncate">{f.NOMCLIENTE}</td>
                       <td className="px-4 py-3 text-slate-400">
@@ -123,6 +249,50 @@ export function FacturasPage() {
                           {fe.icon}
                           {fe.label}
                         </span>
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        <div className="flex items-center justify-center gap-1">
+                          {/* Ticket térmico */}
+                          <button
+                            title="Imprimir ticket"
+                            disabled={acting}
+                            onClick={() => { setActionId(rowId); ticketMutation.mutate(b64Id) }}
+                            className="rounded p-1.5 text-slate-400 hover:bg-slate-700 hover:text-white disabled:opacity-40 transition-colors"
+                          >
+                            {acting && ticketMutation.isPending
+                              ? <Loader2 className="h-4 w-4 animate-spin" />
+                              : <Printer className="h-4 w-4" />
+                            }
+                          </button>
+                          {/* PDF DGI (solo si tiene CUFE) */}
+                          {f.CUFE && (
+                            <button
+                              title="Descargar PDF DGI"
+                              disabled={acting}
+                              onClick={() => { setActionId(rowId); pdfMutation.mutate(b64Id) }}
+                              className="rounded p-1.5 text-slate-400 hover:bg-slate-700 hover:text-white disabled:opacity-40 transition-colors"
+                            >
+                              {acting && pdfMutation.isPending
+                                ? <Loader2 className="h-4 w-4 animate-spin" />
+                                : <FileDown className="h-4 w-4" />
+                              }
+                            </button>
+                          )}
+                          {/* Anular (solo sin CUFE ni saldo) */}
+                          {!f.CUFE && Number(f.MONTOSAL ?? 0) === 0 && (
+                            <button
+                              title="Anular factura"
+                              disabled={acting}
+                              onClick={() => { setActionId(rowId); handleAnular(b64Id, f.NROFAC ?? null) }}
+                              className="rounded p-1.5 text-slate-400 hover:bg-red-900/50 hover:text-red-400 disabled:opacity-40 transition-colors"
+                            >
+                              {acting && anularMutation.isPending
+                                ? <Loader2 className="h-4 w-4 animate-spin" />
+                                : <Trash2  className="h-4 w-4" />
+                              }
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   )

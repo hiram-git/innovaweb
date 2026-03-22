@@ -10,18 +10,39 @@ class InventarioController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        $q = $request->query('q', '');
+        $q       = $request->query('q', '');
         $perPage = min((int) $request->query('per_page', 20), 100);
+        $page    = max(1, (int) $request->query('page', 1));
+        $offset  = ($page - 1) * $perPage;
+
+        $count = DB::selectOne(
+            "SELECT COUNT(*) AS total FROM INVENTARIO
+             WHERE INTEGRADO = 0
+               AND (CODPRO LIKE :q OR DESCRIP1 LIKE :q2)",
+            ['q' => "%{$q}%", 'q2' => "%{$q}%"]
+        );
+        $total = $count?->total ?? 0;
+
         $items = DB::select(
-            "SELECT TOP (:limit) CODPRO, DESCRIP1, EXISTENCIA, CANRESERVADA,
+            "SELECT CODPRO, DESCRIP1, EXISTENCIA, CANRESERVADA,
                     PRECVEN1, IMPPOR, PROCOMPUESTO, TIPINV, UNIDAD
              FROM INVENTARIO
              WHERE INTEGRADO = 0
                AND (CODPRO LIKE :q OR DESCRIP1 LIKE :q2)
-             ORDER BY DESCRIP1",
-            ['limit' => $perPage, 'q' => "%{$q}%", 'q2' => "%{$q}%"]
+             ORDER BY DESCRIP1
+             OFFSET :offset ROWS FETCH NEXT :limit ROWS ONLY",
+            ['q' => "%{$q}%", 'q2' => "%{$q}%", 'offset' => $offset, 'limit' => $perPage]
         );
-        return response()->json(['data' => $items]);
+
+        return response()->json([
+            'data' => $items,
+            'meta' => [
+                'total'        => (int) $total,
+                'per_page'     => $perPage,
+                'current_page' => $page,
+                'last_page'    => max(1, (int) ceil($total / $perPage)),
+            ],
+        ]);
     }
 
     public function show(string $codigo): JsonResponse

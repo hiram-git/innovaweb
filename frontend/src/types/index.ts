@@ -26,29 +26,34 @@ export interface AuthState {
 
 // ─── Cliente ───────────────────────────────────────────────────────────────
 export interface Cliente {
-  CODCLIENTE:   string
-  NOMBRE:       string | null
-  RIF:          string | null
-  TIPOCLI:      string | null
-  TEL1:         string | null
-  EMAIL:        string | null
-  DIRECC1:      string | null
-  PROVINCIA:    string | null
-  DISTRITO:     string | null
-  CORREGIMIENTO: string | null
-  DIASCRE:      number | null
+  CODIGO:        string
+  NOMBRE:        string | null
+  RIF:           string | null
+  NIT:           string | null
+  TIPOCLI:       string | null
+  TIPOCOMERCIO:  number | null
+  DIRECC1:       string | null
+  NUMTEL:        string | null
+  DIRCORREO:     string | null
+  DIASCRE:       number | null
+  CONESPECIAL:   number | null
+  PORRETIMP:     number | null
+  provincia:     string | null
+  distrito:      string | null
+  corregimiento: string | null
 }
 
 // ─── Inventario ────────────────────────────────────────────────────────────
 export interface Produto {
-  CODPRO:    string
-  DESCRIP1:  string
-  EXISTENCIA: number | null
+  CODPRO:       string
+  DESCRIP1:     string
+  EXISTENCIA:   number | null
   CANRESERVADA: number | null
-  PRECVEN1:  number | null
-  ITBMSPOR:  number | null
-  TIPINV:    string | null
-  UNIDAD:    string | null
+  PRECVEN1:     number | null
+  IMPPOR:       number | null
+  PROCOMPUESTO: number | null
+  TIPINV:       string | null
+  UNIDAD:       string | null
 }
 
 // Keep alias for backwards compatibility within this file

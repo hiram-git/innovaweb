@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import { useQuery, useMutation } from '@tanstack/react-query'
-import { Zap, Send, RefreshCw, CheckCircle, XCircle, Clock, AlertTriangle } from 'lucide-react'
+import { Zap, Send, RefreshCw, CheckCircle, XCircle, Clock, AlertTriangle, FileX, FileMinus, X } from 'lucide-react'
 import { api } from '@/lib/axios'
 import { queryClient } from '@/lib/queryClient'
 import { Badge } from '@/components/ui/Badge'
 import { Spinner } from '@/components/ui/Spinner'
 import { Button } from '@/components/ui/Button'
+import { Input } from '@/components/ui/Input'
 import { Toast } from '@/components/ui/Toast'
 
 interface FEDocumento {
@@ -26,6 +27,139 @@ interface FEStats {
   rechazados: number
 }
 
+// ─── Modal Nota de Crédito / Débito ────────────────────────────────────────────
+
+type TipoNota = 'credito' | 'debito'
+
+interface NotaModalProps {
+  doc:   FEDocumento
+  tipo:  TipoNota
+  onClose: () => void
+  onSuccess: (msg: string) => void
+}
+
+function NotaModal({ doc, tipo, onClose, onSuccess }: NotaModalProps) {
+  const [motivo, setMotivo] = useState('')
+  const [monto,  setMonto]  = useState('')
+  const [error,  setError]  = useState<string | null>(null)
+
+  const endpoint = tipo === 'credito'
+    ? `/facturacion-electronica/nota-credito/${doc.CONTROLMAESTRO}`
+    : `/facturacion-electronica/nota-debito/${doc.CONTROLMAESTRO}`
+
+  const label = tipo === 'credito' ? 'Nota de Crédito' : 'Nota de Débito'
+
+  const mutation = useMutation({
+    mutationFn: () =>
+      api.post(endpoint, {
+        motivo,
+        monto: parseFloat(monto),
+      }).then(r => r.data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['fe-docs'] })
+      queryClient.invalidateQueries({ queryKey: ['fe-stats'] })
+      onSuccess(`${label} emitida correctamente`)
+      onClose()
+    },
+    onError: (err: unknown) => {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
+        ?? `Error al emitir ${label}`
+      setError(msg)
+    },
+  })
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    setError(null)
+    if (!motivo.trim()) { setError('El motivo es requerido'); return }
+    const m = parseFloat(monto)
+    if (isNaN(m) || m <= 0) { setError('Ingrese un monto válido mayor a 0'); return }
+    if (m > doc.MONTOTOT) { setError(`El monto no puede superar el total de la factura ($${doc.MONTOTOT.toFixed(2)})`); return }
+    mutation.mutate()
+  }
+
+  return (
+    <>
+      <div className="fixed inset-0 bg-black/60 z-40" onClick={onClose} />
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="w-full max-w-md rounded-xl border border-slate-700 bg-slate-900 shadow-2xl">
+          {/* Header */}
+          <div className="flex items-center justify-between px-5 py-4 border-b border-slate-700">
+            <div className="flex items-center gap-2">
+              {tipo === 'credito'
+                ? <FileMinus className="h-5 w-5 text-blue-400" />
+                : <FileX     className="h-5 w-5 text-orange-400" />}
+              <h2 className="text-base font-semibold text-white">{label}</h2>
+            </div>
+            <button onClick={onClose} className="rounded-md p-1.5 text-slate-400 hover:text-white hover:bg-slate-700">
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+
+          {/* Factura referenciada */}
+          <div className="mx-5 mt-4 rounded-lg bg-slate-800 px-4 py-3 text-sm">
+            <p className="text-slate-400 text-xs mb-1">Factura referenciada</p>
+            <p className="text-white font-mono font-medium">{doc.NROFAC}</p>
+            <p className="text-slate-400 text-xs truncate">{doc.NOMCLIENTE}</p>
+            <p className="text-white text-xs mt-0.5">Total: <span className="font-semibold">${doc.MONTOTOT.toFixed(2)}</span></p>
+          </div>
+
+          {/* Form */}
+          <form onSubmit={handleSubmit} className="px-5 py-4 space-y-4">
+            {error && (
+              <div className="rounded-lg bg-red-900/30 border border-red-700 p-3 text-sm text-red-300">
+                {error}
+              </div>
+            )}
+
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-slate-300">
+                Motivo *
+              </label>
+              <textarea
+                value={motivo}
+                onChange={e => setMotivo(e.target.value)}
+                rows={3}
+                placeholder={tipo === 'credito' ? 'Ej: Devolución de mercancía, error en precio…' : 'Ej: Ajuste por diferencia de precio…'}
+                className="w-full rounded-lg border border-slate-600 bg-slate-800 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+              />
+            </div>
+
+            <Input
+              label="Monto *"
+              type="number"
+              step="0.01"
+              min="0.01"
+              max={doc.MONTOTOT}
+              value={monto}
+              onChange={e => setMonto(e.target.value)}
+              placeholder={`Máx. $${doc.MONTOTOT.toFixed(2)}`}
+            />
+          </form>
+
+          {/* Footer */}
+          <div className="flex items-center justify-end gap-3 px-5 py-4 border-t border-slate-700">
+            <Button type="button" variant="ghost" size="sm" onClick={onClose}>
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              loading={mutation.isPending}
+              onClick={handleSubmit as unknown as React.MouseEventHandler}
+              variant={tipo === 'credito' ? 'primary' : 'secondary'}
+            >
+              Emitir {tipo === 'credito' ? 'Nota de Crédito' : 'Nota de Débito'}
+            </Button>
+          </div>
+        </div>
+      </div>
+    </>
+  )
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
 function estadoBadge(estado: string | null) {
   switch (estado) {
     case 'ACEPTADO':  return <Badge color="green">Aceptado</Badge>
@@ -36,9 +170,12 @@ function estadoBadge(estado: string | null) {
   }
 }
 
+// ─── Main page ────────────────────────────────────────────────────────────────
+
 export function FEPage() {
-  const [toast, setToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
+  const [toast,  setToast]  = useState<{ type: 'success' | 'error'; message: string } | null>(null)
   const [filter, setFilter] = useState<string>('PENDIENTE')
+  const [notaModal, setNotaModal] = useState<{ doc: FEDocumento; tipo: TipoNota } | null>(null)
 
   const { data: stats } = useQuery({
     queryKey: ['fe-stats'],
@@ -85,6 +222,15 @@ export function FEPage() {
   return (
     <div className="space-y-6">
       {toast && <Toast type={toast.type} message={toast.message} onClose={() => setToast(null)} />}
+
+      {notaModal && (
+        <NotaModal
+          doc={notaModal.doc}
+          tipo={notaModal.tipo}
+          onClose={() => setNotaModal(null)}
+          onSuccess={msg => setToast({ type: 'success', message: msg })}
+        />
+      )}
 
       <div className="flex items-center gap-3">
         <Zap className="h-6 w-6 text-blue-400" />
@@ -162,24 +308,49 @@ export function FEPage() {
                       <span className="text-slate-600">—</span>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-center">
-                    {doc.FE_ESTADO === null || doc.FE_ESTADO === 'PENDIENTE' ? (
-                      <Button size="sm" onClick={() => enviarMutation.mutate(doc.CONTROLMAESTRO)}
-                        loading={enviarMutation.isPending && enviarMutation.variables === doc.CONTROLMAESTRO}>
-                        <Send className="h-3.5 w-3.5 mr-1" /> Enviar
-                      </Button>
-                    ) : doc.FE_ESTADO === 'RECHAZADO' ? (
-                      <Button size="sm" variant="secondary"
-                        onClick={() => reenviarMutation.mutate(doc.CONTROLMAESTRO)}
-                        loading={reenviarMutation.isPending && reenviarMutation.variables === doc.CONTROLMAESTRO}>
-                        <RefreshCw className="h-3.5 w-3.5 mr-1" /> Reenviar
-                      </Button>
-                    ) : doc.FE_ESTADO === 'RECHAZADO' && doc.FE_MENSAJE ? (
-                      <div className="flex items-center gap-1 text-red-400 text-xs">
-                        <AlertTriangle className="h-3.5 w-3.5" />
-                        <span title={doc.FE_MENSAJE}>Ver error</span>
-                      </div>
-                    ) : null}
+                  <td className="px-4 py-3">
+                    <div className="flex items-center justify-center gap-1.5 flex-wrap">
+                      {/* Enviar / Reenviar */}
+                      {(doc.FE_ESTADO === null || doc.FE_ESTADO === 'PENDIENTE') && (
+                        <Button size="sm" onClick={() => enviarMutation.mutate(doc.CONTROLMAESTRO)}
+                          loading={enviarMutation.isPending && enviarMutation.variables === doc.CONTROLMAESTRO}>
+                          <Send className="h-3.5 w-3.5 mr-1" /> Enviar
+                        </Button>
+                      )}
+                      {doc.FE_ESTADO === 'RECHAZADO' && (
+                        <Button size="sm" variant="secondary"
+                          onClick={() => reenviarMutation.mutate(doc.CONTROLMAESTRO)}
+                          loading={reenviarMutation.isPending && reenviarMutation.variables === doc.CONTROLMAESTRO}>
+                          <RefreshCw className="h-3.5 w-3.5 mr-1" /> Reenviar
+                        </Button>
+                      )}
+                      {doc.FE_ESTADO === 'RECHAZADO' && doc.FE_MENSAJE && (
+                        <div className="flex items-center gap-1 text-red-400 text-xs">
+                          <AlertTriangle className="h-3.5 w-3.5" />
+                          <span title={doc.FE_MENSAJE}>Ver error</span>
+                        </div>
+                      )}
+
+                      {/* Nota de Crédito / Débito — solo documentos ACEPTADO */}
+                      {doc.FE_ESTADO === 'ACEPTADO' && (
+                        <>
+                          <button
+                            onClick={() => setNotaModal({ doc, tipo: 'credito' })}
+                            title="Emitir Nota de Crédito"
+                            className="flex items-center gap-1 rounded px-2 py-1 text-xs text-blue-400 border border-blue-800 hover:bg-blue-900/30 transition-colors"
+                          >
+                            <FileMinus className="h-3.5 w-3.5" /> N/C
+                          </button>
+                          <button
+                            onClick={() => setNotaModal({ doc, tipo: 'debito' })}
+                            title="Emitir Nota de Débito"
+                            className="flex items-center gap-1 rounded px-2 py-1 text-xs text-orange-400 border border-orange-800 hover:bg-orange-900/30 transition-colors"
+                          >
+                            <FileX className="h-3.5 w-3.5" /> N/D
+                          </button>
+                        </>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}

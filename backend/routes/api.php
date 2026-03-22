@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\V1\CobroController;
 use App\Http\Controllers\Api\V1\PresupuestoController;
 use App\Http\Controllers\Api\V1\InstrumentosController;
 use App\Http\Controllers\Api\V1\ConfiguracionController;
+use App\Http\Controllers\Api\V1\DashboardController;
 
 /*
 |--------------------------------------------------------------------------
@@ -44,17 +45,25 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'throttle:api'])->group(functio
     Route::post('/logout', [AuthController::class, 'logout'])->name('api.logout');
     Route::get('/me',      [AuthController::class, 'me'])->name('api.me');
 
-    // ── Instrumentos de pago ─────────────────────────────────────────────────
-    Route::get('instrumentos', [InstrumentosController::class, 'index'])->name('instrumentos.index');
+    // ── Dashboard ────────────────────────────────────────────────────────────
+    Route::get('dashboard/stats', [DashboardController::class, 'stats'])->name('dashboard.stats');
+
+    // ── Instrumentos de pago (caché 5 min — raramente cambian) ───────────────
+    Route::get('instrumentos', [InstrumentosController::class, 'index'])
+        ->middleware('cache.headers:300')
+        ->name('instrumentos.index');
 
     // ── Clientes ─────────────────────────────────────────────────────────────
     Route::apiResource('clientes', ClienteController::class);
     Route::get('clientes/buscar/ruc/{ruc}', [ClienteController::class, 'buscarPorRuc'])
+        ->middleware('cache.headers:60')
         ->name('clientes.buscar-ruc');
 
-    // ── Inventario ───────────────────────────────────────────────────────────
-    Route::apiResource('inventario', InventarioController::class)->only(['index', 'show']);
+    // ── Inventario (caché 60 s para index/show/disponibilidad) ───────────────
+    Route::apiResource('inventario', InventarioController::class)->only(['index', 'show'])
+        ->middleware('cache.headers:60');
     Route::get('inventario/{codigo}/disponibilidad', [InventarioController::class, 'disponibilidad'])
+        ->middleware('cache.headers:30')
         ->name('inventario.disponibilidad');
 
     // ── Facturas ─────────────────────────────────────────────────────────────
