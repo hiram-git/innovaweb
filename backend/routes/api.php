@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\V1\CobroController;
 use App\Http\Controllers\Api\V1\PresupuestoController;
 use App\Http\Controllers\Api\V1\InstrumentosController;
 use App\Http\Controllers\Api\V1\ConfiguracionController;
+use App\Http\Controllers\Api\V1\DashboardController;
 
 /*
 |--------------------------------------------------------------------------
@@ -43,6 +44,9 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'throttle:api'])->group(functio
     // Auth
     Route::post('/logout', [AuthController::class, 'logout'])->name('api.logout');
     Route::get('/me',      [AuthController::class, 'me'])->name('api.me');
+
+    // ── Dashboard ────────────────────────────────────────────────────────────
+    Route::get('dashboard/stats', [DashboardController::class, 'stats'])->name('dashboard.stats');
 
     // ── Instrumentos de pago ─────────────────────────────────────────────────
     Route::get('instrumentos', [InstrumentosController::class, 'index'])->name('instrumentos.index');
