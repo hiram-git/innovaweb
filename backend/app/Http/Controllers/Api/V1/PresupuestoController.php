@@ -51,11 +51,8 @@ class PresupuestoController extends Controller
     public function store(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'codigo_cliente'   => ['required', 'string', 'max:20'],
-            'nombre_cliente'   => ['required', 'string', 'max:150'],
-            'tipo_cliente'     => ['required', 'string'],
-            'descuento_global' => ['nullable', 'numeric', 'min:0'],
-            'vendedor_cod'     => ['nullable', 'string', 'max:20'],
+            'codcliente'       => ['required', 'string', 'max:20'],
+            'descuentoGlobal'  => ['nullable', 'numeric', 'min:0'],
             'items'            => ['required', 'array', 'min:1'],
             'items.*.codpro'   => ['required', 'string', 'max:20'],
             'items.*.descrip'  => ['required', 'string', 'max:150'],
@@ -66,15 +63,24 @@ class PresupuestoController extends Controller
             'observacion'      => ['nullable', 'string', 'max:500'],
         ]);
 
+        $codCliente = strtoupper(trim($data['codcliente']));
+        $cliente    = DB::selectOne(
+            "SELECT NOMBRE, TIPOCLI FROM BASECLIENTESPROVEEDORES WHERE CODIGO = ? AND TIPREG = '1'",
+            [$codCliente]
+        );
+        if (! $cliente) {
+            return response()->json(['message' => "Cliente '{$codCliente}' no encontrado en el ERP."], 422);
+        }
+
         DB::beginTransaction();
         try {
             $empresa = DB::selectOne("SELECT NROINIPRE FROM BASEEMPRESA WHERE CONTROL = 1");
-            $numref  = str_pad((string) ((int) $empresa->NROINIPRE), 10, '0', STR_PAD_LEFT);
+            $numref  = str_pad((string) ((int) ($empresa->NROINIPRE ?? 1)), 10, '0', STR_PAD_LEFT);
             [$dias,$hora,$ale] = $this->cadena->componentes();
             $control = "{$dias}{$hora}{$ale}PR";
 
             $montoBru = 0; $montoImp = 0;
-            $montoDes = (float) ($data['descuento_global'] ?? 0);
+            $montoDes = (float) ($data['descuentoGlobal'] ?? 0);
             $itemsCalc = [];
 
             foreach ($data['items'] as $item) {
@@ -93,11 +99,11 @@ class PresupuestoController extends Controller
                  VALUES (:ctrl,'1','PRE',:cod,:nom,GETDATE(),:numref,
                          :bru,:imp,:des,:tot,:tcli,:cven,0)",
                 [
-                    'ctrl' => $control, 'cod' => strtoupper($data['codigo_cliente']),
-                    'nom' => $data['nombre_cliente'], 'numref' => $numref,
+                    'ctrl' => $control, 'cod' => $codCliente,
+                    'nom' => $cliente->NOMBRE, 'numref' => $numref,
                     'bru' => round($montoBru,2), 'imp' => round($montoImp,2),
                     'des' => round($montoDes,2), 'tot' => round($montoTot,2),
-                    'tcli' => $data['tipo_cliente'], 'cven' => $data['vendedor_cod'] ?? '',
+                    'tcli' => $cliente->TIPOCLI ?? '01', 'cven' => $request->user()->erp_coduser ?? '',
                 ]
             );
 
@@ -164,11 +170,11 @@ class PresupuestoController extends Controller
     {
         $controlPre = base64_decode($id);
         $data = $request->validate([
-            'tipo_factura'     => ['required', 'in:CONTADO,CREDITO'],
-            'dias_vencimiento' => ['nullable', 'integer', 'min:0'],
-            'formas_pago'      => ['required', 'array', 'min:1'],
-            'formas_pago.*.codtar' => ['required', 'string'],
-            'formas_pago.*.monto'  => ['required', 'numeric', 'min:0.01'],
+            'tipoFactura'              => ['required', 'in:CONTADO,CREDITO'],
+            'diasVencimiento'          => ['nullable', 'integer', 'min:0'],
+            'formasPago'               => ['required', 'array', 'min:1'],
+            'formasPago.*.instrumento' => ['required', 'string'],
+            'formasPago.*.monto'       => ['required', 'numeric', 'min:0.01'],
         ]);
 
         $pres = DB::selectOne(
@@ -188,11 +194,11 @@ class PresupuestoController extends Controller
             [$dias,$hora,$ale] = $this->cadena->componentes();
             $controlFac = "{$dias}{$hora}{$ale}01";
 
-            $diasVenc  = (int) ($data['dias_vencimiento'] ?? 0);
+            $diasVenc  = (int) ($data['diasVencimiento'] ?? 0);
             $montoTot  = (float) $pres->MONTOTOT;
-            $totalPag  = array_sum(array_column($data['formas_pago'], 'monto'));
+            $totalPag  = array_sum(array_column($data['formasPago'], 'monto'));
             $cambio    = max(0, $totalPag - $montoTot);
-            $montoSal  = $data['tipo_factura'] === 'CREDITO' ? $montoTot : 0;
+            $montoSal  = $data['tipoFactura'] === 'CREDITO' ? $montoTot : 0;
             $fechaVenc = now('America/Panama')->addDays($diasVenc)->format('Y-m-d');
 
             DB::statement(
@@ -203,7 +209,7 @@ class PresupuestoController extends Controller
                  VALUES (:ctrl,'1','FAC',:tipofac,:cod,:nom,GETDATE(),:numref,
                          :bru,:imp,:des,:tot,:sal,:cambio,:dias,:fvenc,:tcli,:cven,0)",
                 [
-                    'ctrl' => $controlFac, 'tipofac' => $data['tipo_factura'],
+                    'ctrl' => $controlFac, 'tipofac' => $data['tipoFactura'],
                     'cod' => $pres->CODIGO, 'nom' => $pres->NOMBRE,
                     'numref' => $numref, 'bru' => $pres->MONTOBRU, 'imp' => $pres->MONTOIMP,
                     'des' => $pres->MONTODES, 'tot' => $montoTot, 'sal' => round($montoSal,2),
@@ -234,11 +240,11 @@ class PresupuestoController extends Controller
                 );
             }
 
-            foreach ($data['formas_pago'] as $fp) {
+            foreach ($data['formasPago'] as $fp) {
                 [$d3,$h3,$a3] = $this->cadena->componentes();
                 DB::statement(
                     "INSERT INTO TRANSACCPAGOS (FECHORA,CONTROL,CODTAR,MONTOPAG,INTEGRADO) VALUES (:fh,:ctrl,:cod,:m,0)",
-                    ['fh' => "{$d3}{$h3}{$a3}03", 'ctrl' => $controlFac, 'cod' => $fp['codtar'], 'm' => round((float)$fp['monto'],2)]
+                    ['fh' => "{$d3}{$h3}{$a3}03", 'ctrl' => $controlFac, 'cod' => $fp['instrumento'], 'm' => round((float)$fp['monto'],2)]
                 );
             }
 
