@@ -1,0 +1,144 @@
+# ─── InnovaWeb — Docker Compose (Producción) ─────────────────────────────────
+#
+# Servicios:
+#   nginx   → Servidor web (puerto 80/443)
+#   php     → PHP 8.3 FPM (Laravel API)
+#   node    → Build del frontend React (solo en desarrollo)
+#   redis   → Caché y colas de Laravel (opcional)
+#
+# La base de datos (SQL Server) se mantiene EXTERNA al contenedor porque
+# debe coexistir con el ERP Clarion Desktop en el mismo servidor Windows.
+# Configura DB_HOST en .env apuntando al host SQL Server.
+#
+# Uso:
+#   docker compose up -d            → Iniciar
+#   docker compose exec php php artisan migrate
+#   docker compose logs -f php      → Ver logs
+
+services:
+
+  # ─── Nginx ──────────────────────────────────────────────────────────────────
+  nginx:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./backend/public:/var/www/html/backend/public:ro
+      - ./frontend/dist:/var/www/html/frontend/dist:ro
+      - nginx_logs:/var/log/nginx
+    depends_on:
+      - php
+    networks:
+      - innovaweb
+
+  # ─── PHP-FPM ─────────────────────────────────────────────────────────────────
+  php:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+      target: production
+    restart: unless-stopped
+    environment:
+      - APP_ENV=${APP_ENV:-production}
+      - APP_KEY=${APP_KEY}
+      - APP_URL=${APP_URL:-http://innovaweb-api.test}
+      - DB_CONNECTION=sqlsrv
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT:-}
+      - DB_DATABASE=${DB_DATABASE}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_ENCRYPT=${DB_ENCRYPT:-false}
+      - DB_TRUST_SERVER_CERTIFICATE=${DB_TRUST_SERVER_CERTIFICATE:-true}
+      - CACHE_STORE=${CACHE_STORE:-redis}
+      - QUEUE_CONNECTION=${QUEUE_CONNECTION:-redis}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - SESSION_DRIVER=file
+      - APP_TIMEZONE=America/Panama
+      - FE_AMBIENTE=${FE_AMBIENTE:-sandbox}
+      - TFHKA_WSDL_SANDBOX=${TFHKA_WSDL_SANDBOX}
+      - TFHKA_WSDL_PRODUCCION=${TFHKA_WSDL_PRODUCCION}
+      - TFHKA_USUARIO=${TFHKA_USUARIO}
+      - TFHKA_PASSWORD=${TFHKA_PASSWORD}
+    volumes:
+      - ./backend:/var/www/html/backend
+      - php_logs:/var/www/html/backend/storage/logs
+    depends_on:
+      - redis
+    networks:
+      - innovaweb
+    extra_hosts:
+      # Permite que PHP acceda al SQL Server en el host Windows
+      - "host.docker.internal:host-gateway"
+
+  # ─── Redis ───────────────────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: redis-server --maxmemory 128mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    networks:
+      - innovaweb
+
+  # ─── Worker (colas de Laravel) ───────────────────────────────────────────────
+  worker:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+      target: production
+    restart: unless-stopped
+    command: php artisan queue:work --tries=3 --backoff=5 --sleep=3 --max-time=3600
+    environment:
+      - APP_ENV=${APP_ENV:-production}
+      - APP_KEY=${APP_KEY}
+      - DB_CONNECTION=sqlsrv
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT:-}
+      - DB_DATABASE=${DB_DATABASE}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_ENCRYPT=${DB_ENCRYPT:-false}
+      - DB_TRUST_SERVER_CERTIFICATE=${DB_TRUST_SERVER_CERTIFICATE:-true}
+      - CACHE_STORE=redis
+      - QUEUE_CONNECTION=redis
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - APP_TIMEZONE=America/Panama
+      - TFHKA_WSDL_PRODUCCION=${TFHKA_WSDL_PRODUCCION}
+      - TFHKA_USUARIO=${TFHKA_USUARIO}
+      - TFHKA_PASSWORD=${TFHKA_PASSWORD}
+    volumes:
+      - ./backend:/var/www/html/backend
+    depends_on:
+      - redis
+    networks:
+      - innovaweb
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  # ─── Frontend build (solo desarrollo) ────────────────────────────────────────
+  # En producción: ejecutar "npm run build" en el host y copiar dist/
+  # frontend:
+  #   image: node:22-alpine
+  #   working_dir: /app
+  #   volumes:
+  #     - ./frontend:/app
+  #   command: sh -c "npm install && npm run dev"
+  #   ports:
+  #     - "5173:5173"
+  #   networks:
+  #     - innovaweb
+
+volumes:
+  nginx_logs:
+  php_logs:
+  redis_data:
+
+networks:
+  innovaweb:
+    driver: bridge

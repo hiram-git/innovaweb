@@ -13,6 +13,9 @@ return Application::configure(basePath: dirname(__DIR__))
         apiPrefix: 'api',
     )
     ->withMiddleware(function (Middleware $middleware) {
+        // Cabeceras de seguridad HTTP en todas las respuestas
+        $middleware->append(\App\Http\Middleware\SecurityHeaders::class);
+
         // Sanctum: valida tokens en rutas API
         $middleware->statefulApi();
 
