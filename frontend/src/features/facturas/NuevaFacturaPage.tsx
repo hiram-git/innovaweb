@@ -4,10 +4,12 @@ import { useQuery, useMutation } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Search, Plus, Trash2, ChevronLeft } from 'lucide-react'
+import { Search, Plus, Trash2, ChevronLeft, WifiOff } from 'lucide-react'
 import { api } from '@/lib/axios'
 import { useFacturaStore } from '@/stores/facturaStore'
+import { useOnlineStatus } from '@/hooks/useOnlineStatus'
 import { queryClient } from '@/lib/queryClient'
+import { db } from '@/lib/db'
 import { Button } from '@/components/ui/Button'
 import { Toast } from '@/components/ui/Toast'
 import type { Cliente, Produto, ItemFactura, FormaPago, NuevaFacturaPayload } from '@/types'
@@ -34,12 +36,33 @@ function calcItem(i: ItemFactura) {
 
 /* ─── Selector de cliente ─── */
 function ClienteSelector({ onSelect }: { onSelect: (c: Cliente) => void }) {
-  const [q, setQ]     = useState('')
+  const [q, setQ]       = useState('')
   const [open, setOpen] = useState(false)
+  const isOnline        = useOnlineStatus()
 
   const { data } = useQuery({
     queryKey: ['clientes-search', q],
-    queryFn: () => api.get<{ data: Cliente[] }>('/clientes', { params: { q, limit: 8 } }).then(r => r.data.data),
+    queryFn: async () => {
+      if (isOnline) {
+        const result = await api.get<{ data: Cliente[] }>('/clientes', { params: { q, limit: 8 } })
+          .then(r => r.data.data)
+        // Cache results to Dexie for offline use (bulkPut ignores duplicates)
+        if (result.length > 0) {
+          await db.clientes.bulkPut(result).catch(() => {/* ignore quota errors */})
+        }
+        return result
+      } else {
+        // Offline: search from local IndexedDB cache
+        return db.clientes
+          .filter(c =>
+            (c.NOMBRE ?? '').toLowerCase().includes(q.toLowerCase()) ||
+            (c.RIF    ?? '').toLowerCase().includes(q.toLowerCase()) ||
+            (c.CODIGO ?? '').toLowerCase().includes(q.toLowerCase())
+          )
+          .limit(8)
+          .toArray()
+      }
+    },
     enabled: q.length >= 2,
   })
 
@@ -49,12 +72,15 @@ function ClienteSelector({ onSelect }: { onSelect: (c: Cliente) => void }) {
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
         <input
           type="text"
-          placeholder="Buscar cliente por nombre o RUC…"
+          placeholder={isOnline ? 'Buscar cliente por nombre o RUC…' : 'Buscar en caché local…'}
           value={q}
           onChange={e => { setQ(e.target.value); setOpen(true) }}
           onFocus={() => setOpen(true)}
           className="w-full rounded-lg border border-slate-700 bg-slate-800 py-2 pl-9 pr-4 text-sm text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none"
         />
+        {!isOnline && (
+          <WifiOff className="absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-yellow-500" />
+        )}
       </div>
       {open && data && data.length > 0 && (
         <ul className="absolute z-20 mt-1 w-full rounded-lg border border-slate-700 bg-slate-900 shadow-xl max-h-52 overflow-y-auto">
@@ -80,10 +106,28 @@ function ClienteSelector({ onSelect }: { onSelect: (c: Cliente) => void }) {
 function AgregarItemForm({ onAdd }: { onAdd: (i: ItemFactura) => void }) {
   const [q, setQ]       = useState('')
   const [open, setOpen] = useState(false)
+  const isOnline        = useOnlineStatus()
 
   const { data: productos } = useQuery({
     queryKey: ['productos-search-item', q],
-    queryFn: () => api.get<{ data: Produto[] }>('/inventario', { params: { q, limit: 8 } }).then(r => r.data.data),
+    queryFn: async () => {
+      if (isOnline) {
+        const result = await api.get<{ data: Produto[] }>('/inventario', { params: { q, limit: 8 } })
+          .then(r => r.data.data)
+        if (result.length > 0) {
+          await db.productos.bulkPut(result).catch(() => {/* ignore quota errors */})
+        }
+        return result
+      } else {
+        return db.productos
+          .filter(p =>
+            (p.CODPRO   ?? '').toLowerCase().includes(q.toLowerCase()) ||
+            (p.DESCRIP1 ?? '').toLowerCase().includes(q.toLowerCase())
+          )
+          .limit(8)
+          .toArray()
+      }
+    },
     enabled: q.length >= 2,
   })
 
@@ -277,8 +321,10 @@ function FormasPagoSection({
 
 /* ─── Página principal ─── */
 export function NuevaFacturaPage() {
-  const navigate   = useNavigate()
-  const [toast, setToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
+  const navigate        = useNavigate()
+  const isOnline        = useOnlineStatus()
+  const [toast, setToast]   = useState<{ type: 'success' | 'error'; message: string } | null>(null)
+  const [savingOffline, setSavingOffline] = useState(false)
 
   const {
     cliente, setCliente,
@@ -310,6 +356,25 @@ export function NuevaFacturaPage() {
     },
   })
 
+  const saveOffline = async (payload: NuevaFacturaPayload) => {
+    setSavingOffline(true)
+    try {
+      await db.facturas_offline.add({
+        tempId:   `offline-${Date.now()}`,
+        payload,
+        creadaEn: new Date(),
+        estado:   'pendiente',
+      })
+      reset()
+      setToast({ type: 'success', message: 'Sin conexión: factura guardada para sincronizar al reconectar' })
+      setTimeout(() => navigate('/facturas'), 2000)
+    } catch {
+      setToast({ type: 'error', message: 'No se pudo guardar la factura localmente' })
+    } finally {
+      setSavingOffline(false)
+    }
+  }
+
   const handleSubmit = () => {
     if (!cliente) { setToast({ type: 'error', message: 'Seleccione un cliente' }); return }
     if (items.length === 0) { setToast({ type: 'error', message: 'Agregue al menos un ítem' }); return }
@@ -333,7 +398,12 @@ export function NuevaFacturaPage() {
       })),
       formasPago: tipoFactura === 'CONTADO' ? formasPago : [],
     }
-    mutation.mutate(payload)
+
+    if (!isOnline) {
+      void saveOffline(payload)
+    } else {
+      mutation.mutate(payload)
+    }
   }
 
   return (
@@ -491,6 +561,14 @@ export function NuevaFacturaPage() {
         </section>
       )}
 
+      {/* Banner sin conexión */}
+      {!isOnline && (
+        <div className="flex items-center gap-2 rounded-lg border border-yellow-700 bg-yellow-900/20 px-4 py-3 text-sm text-yellow-300">
+          <WifiOff className="h-4 w-4 shrink-0" />
+          Sin conexión — la factura se guardará localmente y se sincronizará al reconectar.
+        </div>
+      )}
+
       {/* Acciones */}
       <div className="flex gap-3 justify-end pb-6">
         <Button variant="secondary" onClick={() => { reset(); navigate('/facturas') }}>
@@ -498,10 +576,10 @@ export function NuevaFacturaPage() {
         </Button>
         <Button
           onClick={handleSubmit}
-          loading={mutation.isPending}
-          disabled={mutation.isPending}
+          loading={mutation.isPending || savingOffline}
+          disabled={mutation.isPending || savingOffline}
         >
-          Emitir Factura
+          {isOnline ? 'Emitir Factura' : 'Guardar offline'}
         </Button>
       </div>
     </div>

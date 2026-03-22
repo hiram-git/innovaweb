@@ -26,7 +26,7 @@ export interface FacturaOffline {
 }
 
 class InnovaWebDB extends Dexie {
-  clientes!:         EntityTable<Cliente,       'CODCLIENTE'>
+  clientes!:         EntityTable<Cliente,       'CODIGO'>
   productos!:        EntityTable<Produto,        'CODPRO'>
   facturas!:         EntityTable<FacturaMaestro, 'CONTROLMAESTRO'>
   facturas_offline!: EntityTable<FacturaOffline, 'id'>
@@ -35,6 +35,13 @@ class InnovaWebDB extends Dexie {
     super('InnovaWebDB')
     this.version(1).stores({
       clientes:         'CODCLIENTE, NOMBRE, RIF',
+      productos:        'CODPRO, DESCRIP1',
+      facturas:         'CONTROLMAESTRO, NROFAC, NOMCLIENTE, FECHA',
+      facturas_offline: '++id, tempId, creadaEn, estado',
+    })
+    // v2: corrige el primary key de clientes (CODCLIENTE → CODIGO per ERP schema)
+    this.version(2).stores({
+      clientes:         'CODIGO, NOMBRE, RIF',
       productos:        'CODPRO, DESCRIP1',
       facturas:         'CONTROLMAESTRO, NROFAC, NOMCLIENTE, FECHA',
       facturas_offline: '++id, tempId, creadaEn, estado',
