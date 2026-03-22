@@ -1,0 +1,27 @@
+# Node
+frontend/node_modules
+frontend/.vite
+
+# Backend
+backend/vendor
+backend/node_modules
+backend/storage/logs/*.log
+backend/.env
+backend/.env.local
+
+# Git
+.git
+.gitignore
+
+# Docs
+*.md
+SETUP.md
+
+# Tests
+backend/tests
+frontend/src/**/__tests__
+frontend/src/test
+
+# Build outputs (se generan dentro del contenedor)
+backend/public/hot
+backend/public/storage
