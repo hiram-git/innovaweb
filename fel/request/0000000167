@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<SOAP-ENV:Envelope xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ns1="http://tempuri.org/" xmlns:ns2="http://schemas.datacontract.org/2004/07/Services.ObjComprobante.v1_0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <SOAP-ENV:Body>
+    <ns1:Enviar>
+      <ns1:tokenEmpresa>1</ns1:tokenEmpresa>
+      <ns1:tokenPassword>1</ns1:tokenPassword>
+      <ns1:documento>
+        <ns2:codigoSucursalEmisor>0000</ns2:codigoSucursalEmisor>
+        <ns2:tipoSucursal>1</ns2:tipoSucursal>
+        <ns2:datosTransaccion>
+          <ns2:tipoEmision>01</ns2:tipoEmision>
+          <ns2:tipoDocumento>01</ns2:tipoDocumento>
+          <ns2:numeroDocumentoFiscal>0000000167</ns2:numeroDocumentoFiscal>
+          <ns2:puntoFacturacionFiscal>0</ns2:puntoFacturacionFiscal>
+          <ns2:fechaEmision>2025-03-28T09:57:08-05:00</ns2:fechaEmision>
+          <ns2:naturalezaOperacion>01</ns2:naturalezaOperacion>
+          <ns2:tipoOperacion>1</ns2:tipoOperacion>
+          <ns2:destinoOperacion>1</ns2:destinoOperacion>
+          <ns2:formatoCAFE>1</ns2:formatoCAFE>
+          <ns2:entregaCAFE>1</ns2:entregaCAFE>
+          <ns2:envioContenedor>1</ns2:envioContenedor>
+          <ns2:procesoGeneracion>1</ns2:procesoGeneracion>
+          <ns2:tipoVenta>1</ns2:tipoVenta>
+          <ns2:informacionInteres/>
+          <ns2:cliente>
+            <ns2:tipoClienteFE>02</ns2:tipoClienteFE>
+            <ns2:tipoContribuyente>1</ns2:tipoContribuyente>
+            <ns2:numeroRUC>21000</ns2:numeroRUC>
+            <ns2:digitoVerificadorRUC/>
+            <ns2:razonSocial>CONSUMIDOR , FINAL </ns2:razonSocial>
+            <ns2:direccion>.</ns2:direccion>
+            <ns2:codigoUbicacion>8-8-8</ns2:codigoUbicacion>
+            <ns2:provincia>8</ns2:provincia>
+            <ns2:distrito>8</ns2:distrito>
+            <ns2:corregimiento>8</ns2:corregimiento>
+            <ns2:telefono1>9999-9999</ns2:telefono1>
+            <ns2:telefono2 xsi:nil="true"/>
+            <ns2:telefono3 xsi:nil="true"/>
+            <ns2:correoElectronico1/>
+            <ns2:pais>PA</ns2:pais>
+            <ns2:paisOtro xsi:nil="true"/>
+          </ns2:cliente>
+        </ns2:datosTransaccion>
+        <ns2:listaItems>
+          <ns2:item>
+            <ns2:descripcion>CENA</ns2:descripcion>
+            <ns2:codigo>SERV2</ns2:codigo>
+            <ns2:unidadMedida>und</ns2:unidadMedida>
+            <ns2:cantidad>1.0000</ns2:cantidad>
+            <ns2:precioUnitario>15.00</ns2:precioUnitario>
+            <ns2:precioUnitarioDescuento>0.00</ns2:precioUnitarioDescuento>
+            <ns2:precioItem>15.00</ns2:precioItem>
+            <ns2:valorTotal>15.00</ns2:valorTotal>
+            <ns2:tasaITBMS>00</ns2:tasaITBMS>
+            <ns2:valorITBMS>0.00</ns2:valorITBMS>
+          </ns2:item>
+          <ns2:item>
+            <ns2:descripcion>HABITACIÓN MATRIMONIAL</ns2:descripcion>
+            <ns2:codigo>HAB1</ns2:codigo>
+            <ns2:unidadMedida>und</ns2:unidadMedida>
+            <ns2:cantidad>1.0000</ns2:cantidad>
+            <ns2:precioUnitario>100.00</ns2:precioUnitario>
+            <ns2:precioUnitarioDescuento>0.00</ns2:precioUnitarioDescuento>
+            <ns2:precioItem>100.00</ns2:precioItem>
+            <ns2:valorTotal>107.00</ns2:valorTotal>
+            <ns2:tasaITBMS>01</ns2:tasaITBMS>
+            <ns2:valorITBMS>7.00</ns2:valorITBMS>
+          </ns2:item>
+          <ns2:item>
+            <ns2:descripcion>DESAYUNO</ns2:descripcion>
+            <ns2:codigo>SERV1</ns2:codigo>
+            <ns2:unidadMedida>und</ns2:unidadMedida>
+            <ns2:cantidad>1.0000</ns2:cantidad>
+            <ns2:precioUnitario>5.00</ns2:precioUnitario>
+            <ns2:precioUnitarioDescuento>0.00</ns2:precioUnitarioDescuento>
+            <ns2:precioItem>5.00</ns2:precioItem>
+            <ns2:valorTotal>5.00</ns2:valorTotal>
+            <ns2:tasaITBMS>00</ns2:tasaITBMS>
+            <ns2:valorITBMS>0.00</ns2:valorITBMS>
+          </ns2:item>
+        </ns2:listaItems>
+        <ns2:totalesSubTotales>
+          <ns2:totalPrecioNeto>120.00</ns2:totalPrecioNeto>
+          <ns2:totalITBMS>7.00</ns2:totalITBMS>
+          <ns2:totalMontoGravado>7.00</ns2:totalMontoGravado>
+          <ns2:totalDescuento>12.00</ns2:totalDescuento>
+          <ns2:totalAcarreoCobrado>0.00</ns2:totalAcarreoCobrado>
+          <ns2:valorSeguroCobrado>0.00</ns2:valorSeguroCobrado>
+          <ns2:totalFactura>115.00</ns2:totalFactura>
+          <ns2:totalValorRecibido>114.30</ns2:totalValorRecibido>
+          <ns2:tiempoPago>2</ns2:tiempoPago>
+          <ns2:nroItems>3</ns2:nroItems>
+          <ns2:totalTodosItems>127.00</ns2:totalTodosItems>
+          <ns2:listaDescBonificacion>
+            <ns2:descuentoBonificacion>
+              <ns2:descDescuento>DESC. GLOBAL</ns2:descDescuento>
+              <ns2:montoDescuento>12.00</ns2:montoDescuento>
+            </ns2:descuentoBonificacion>
+          </ns2:listaDescBonificacion>
+          <ns2:listaFormaPago>
+            <ns2:formaPago>
+              <ns2:formaPagoFact>01</ns2:formaPagoFact>
+              <ns2:valorCuotaPagada>114.30</ns2:valorCuotaPagada>
+            </ns2:formaPago>
+          </ns2:listaFormaPago>
+          <ns2:listaPagoPlazo>
+            <ns2:pagoPlazo>
+              <ns2:fechaVenceCuota>2025-04-27T00:00:00-05:00</ns2:fechaVenceCuota>
+              <ns2:valorCuota>114.30</ns2:valorCuota>
+              <ns2:infoPagoCuota>PAGO POR CUOTA 114.30</ns2:infoPagoCuota>
+            </ns2:pagoPlazo>
+          </ns2:listaPagoPlazo>
+        </ns2:totalesSubTotales>
+      </ns1:documento>
+    </ns1:Enviar>
+  </SOAP-ENV:Body>
+</SOAP-ENV:Envelope>

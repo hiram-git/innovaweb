@@ -1,0 +1,57 @@
+
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Ejemplo</title>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/jquery.queryloader2/3.2.2/jquery.queryloader2.min.js"></script>
+  <style>
+    /* Preload */
+    #precarga {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #fff;
+      z-index: 9999;
+    }
+    
+    /*Body*/
+    body {
+      background-color: #fff;
+      color: #778899;
+      font-family: 'Open Sans', sans-serif;
+      text-rendering: optimizelegibility;
+    }
+    </style>
+
+    <script>
+      $("body").queryLoader2({
+        barColor: "#555566",
+        backgroundColor: "#fff",
+        percentage: true,
+        barHeight: 1,
+        completeAnimation: "grow",
+        minimumTime: 100,
+        onLoadComplete: hidePreLoader
+      });
+
+      function hidePreLoader() {
+        $("#precarga").hide();
+      }
+    </script>
+</head>
+
+<body>
+  <div id="precarga"></div>
+
+  <div id="contenido">
+    <h1>Contenido de la Pagina</h1>
+  </div>
+
+</body>
+
+</html>

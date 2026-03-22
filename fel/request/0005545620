@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<SOAP-ENV:Envelope xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ns1="http://tempuri.org/" xmlns:ns2="http://schemas.datacontract.org/2004/07/Services.ObjComprobante.v1_0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <SOAP-ENV:Body>
+    <ns1:Enviar>
+      <ns1:tokenEmpresa>hxgkbfaefxwa_tfhka</ns1:tokenEmpresa>
+      <ns1:tokenPassword>dL,VAeL++;&amp;W</ns1:tokenPassword>
+      <ns1:documento>
+        <ns2:codigoSucursalEmisor>0000</ns2:codigoSucursalEmisor>
+        <ns2:tipoSucursal>1</ns2:tipoSucursal>
+        <ns2:datosTransaccion>
+          <ns2:tipoEmision>01</ns2:tipoEmision>
+          <ns2:tipoDocumento>01</ns2:tipoDocumento>
+          <ns2:numeroDocumentoFiscal>0005545620</ns2:numeroDocumentoFiscal>
+          <ns2:puntoFacturacionFiscal>001</ns2:puntoFacturacionFiscal>
+          <ns2:fechaEmision>2026-01-13T13:27:14-05:00</ns2:fechaEmision>
+          <ns2:naturalezaOperacion>01</ns2:naturalezaOperacion>
+          <ns2:tipoOperacion>1</ns2:tipoOperacion>
+          <ns2:destinoOperacion>1</ns2:destinoOperacion>
+          <ns2:formatoCAFE>1</ns2:formatoCAFE>
+          <ns2:entregaCAFE>1</ns2:entregaCAFE>
+          <ns2:envioContenedor>1</ns2:envioContenedor>
+          <ns2:procesoGeneracion>1</ns2:procesoGeneracion>
+          <ns2:tipoVenta>1</ns2:tipoVenta>
+          <ns2:informacionInteres/>
+          <ns2:cliente>
+            <ns2:tipoClienteFE>02</ns2:tipoClienteFE>
+            <ns2:tipoContribuyente>1</ns2:tipoContribuyente>
+            <ns2:numeroRUC>11111</ns2:numeroRUC>
+            <ns2:digitoVerificadorRUC/>
+            <ns2:razonSocial>CLIENTE CONTADO</ns2:razonSocial>
+            <ns2:direccion>PANAMA</ns2:direccion>
+            <ns2:codigoUbicacion>8-8-7</ns2:codigoUbicacion>
+            <ns2:provincia>8</ns2:provincia>
+            <ns2:distrito>8</ns2:distrito>
+            <ns2:corregimiento>7</ns2:corregimiento>
+            <ns2:telefono1>9999-9999</ns2:telefono1>
+            <ns2:telefono2 xsi:nil="true"/>
+            <ns2:telefono3 xsi:nil="true"/>
+            <ns2:correoElectronico1/>
+            <ns2:pais>PA</ns2:pais>
+            <ns2:paisOtro xsi:nil="true"/>
+          </ns2:cliente>
+        </ns2:datosTransaccion>
+        <ns2:listaItems>
+          <ns2:item>
+            <ns2:descripcion>PRECIO 02</ns2:descripcion>
+            <ns2:codigo>002</ns2:codigo>
+            <ns2:unidadMedida>und</ns2:unidadMedida>
+            <ns2:cantidad>1.0000</ns2:cantidad>
+            <ns2:fechaFabricacion xsi:nil="true"/>
+            <ns2:codigoCPBSAbrev xsi:nil="true"/>
+            <ns2:codigoCPBS xsi:nil="true"/>
+            <ns2:unidadMedidaCPBS xsi:nil="true"/>
+            <ns2:precioUnitario>1.00</ns2:precioUnitario>
+            <ns2:precioUnitarioDescuento>0.00</ns2:precioUnitarioDescuento>
+            <ns2:precioItem>1.00</ns2:precioItem>
+            <ns2:precioAcarreo xsi:nil="true"/>
+            <ns2:precioSeguro xsi:nil="true"/>
+            <ns2:valorTotal>1.00</ns2:valorTotal>
+            <ns2:codigoGTIN xsi:nil="true"/>
+            <ns2:cantGTINCom xsi:nil="true"/>
+            <ns2:codigoGTINInv xsi:nil="true"/>
+            <ns2:cantGTINComInv xsi:nil="true"/>
+            <ns2:tasaITBMS>00</ns2:tasaITBMS>
+            <ns2:valorITBMS>0.00</ns2:valorITBMS>
+            <ns2:tasaISC xsi:nil="true"/>
+            <ns2:valorISC xsi:nil="true"/>
+          </ns2:item>
+          <ns2:item>
+            <ns2:descripcion>IVAN</ns2:descripcion>
+            <ns2:codigo>IV</ns2:codigo>
+            <ns2:unidadMedida>und</ns2:unidadMedida>
+            <ns2:cantidad>1.0000</ns2:cantidad>
+            <ns2:fechaFabricacion xsi:nil="true"/>
+            <ns2:codigoCPBSAbrev xsi:nil="true"/>
+            <ns2:codigoCPBS xsi:nil="true"/>
+            <ns2:unidadMedidaCPBS xsi:nil="true"/>
+            <ns2:precioUnitario>0.14</ns2:precioUnitario>
+            <ns2:precioUnitarioDescuento>0.00</ns2:precioUnitarioDescuento>
+            <ns2:precioItem>0.14</ns2:precioItem>
+            <ns2:precioAcarreo xsi:nil="true"/>
+            <ns2:precioSeguro xsi:nil="true"/>
+            <ns2:valorTotal>0.14</ns2:valorTotal>
+            <ns2:codigoGTIN xsi:nil="true"/>
+            <ns2:cantGTINCom xsi:nil="true"/>
+            <ns2:codigoGTINInv xsi:nil="true"/>
+            <ns2:cantGTINComInv xsi:nil="true"/>
+            <ns2:tasaITBMS>00</ns2:tasaITBMS>
+            <ns2:valorITBMS>0.00</ns2:valorITBMS>
+            <ns2:tasaISC xsi:nil="true"/>
+            <ns2:valorISC xsi:nil="true"/>
+          </ns2:item>
+          <ns2:item>
+            <ns2:descripcion>EXENTO</ns2:descripcion>
+            <ns2:codigo>EX</ns2:codigo>
+            <ns2:unidadMedida>und</ns2:unidadMedida>
+            <ns2:cantidad>1.0000</ns2:cantidad>
+            <ns2:fechaFabricacion xsi:nil="true"/>
+            <ns2:codigoCPBSAbrev xsi:nil="true"/>
+            <ns2:codigoCPBS xsi:nil="true"/>
+            <ns2:unidadMedidaCPBS xsi:nil="true"/>
+            <ns2:precioUnitario>10.00</ns2:precioUnitario>
+            <ns2:precioUnitarioDescuento>0.00</ns2:precioUnitarioDescuento>
+            <ns2:precioItem>10.00</ns2:precioItem>
+            <ns2:precioAcarreo xsi:nil="true"/>
+            <ns2:precioSeguro xsi:nil="true"/>
+            <ns2:valorTotal>10.00</ns2:valorTotal>
+            <ns2:codigoGTIN xsi:nil="true"/>
+            <ns2:cantGTINCom xsi:nil="true"/>
+            <ns2:codigoGTINInv xsi:nil="true"/>
+            <ns2:cantGTINComInv xsi:nil="true"/>
+            <ns2:tasaITBMS>00</ns2:tasaITBMS>
+            <ns2:valorITBMS>0.00</ns2:valorITBMS>
+            <ns2:tasaISC xsi:nil="true"/>
+            <ns2:valorISC xsi:nil="true"/>
+          </ns2:item>
+          <ns2:item>
+            <ns2:descripcion>CELULAR</ns2:descripcion>
+            <ns2:codigo>COMP2</ns2:codigo>
+            <ns2:unidadMedida>und</ns2:unidadMedida>
+            <ns2:cantidad>1.0000</ns2:cantidad>
+            <ns2:fechaFabricacion xsi:nil="true"/>
+            <ns2:codigoCPBSAbrev xsi:nil="true"/>
+            <ns2:codigoCPBS xsi:nil="true"/>
+            <ns2:unidadMedidaCPBS xsi:nil="true"/>
+            <ns2:precioUnitario>150.00</ns2:precioUnitario>
+            <ns2:precioUnitarioDescuento>0.00</ns2:precioUnitarioDescuento>
+            <ns2:precioItem>150.00</ns2:precioItem>
+            <ns2:precioAcarreo xsi:nil="true"/>
+            <ns2:precioSeguro xsi:nil="true"/>
+            <ns2:valorTotal>160.50</ns2:valorTotal>
+            <ns2:codigoGTIN xsi:nil="true"/>
+            <ns2:cantGTINCom xsi:nil="true"/>
+            <ns2:codigoGTINInv xsi:nil="true"/>
+            <ns2:cantGTINComInv xsi:nil="true"/>
+            <ns2:tasaITBMS>01</ns2:tasaITBMS>
+            <ns2:valorITBMS>10.50</ns2:valorITBMS>
+            <ns2:tasaISC xsi:nil="true"/>
+            <ns2:valorISC xsi:nil="true"/>
+          </ns2:item>
+        </ns2:listaItems>
+        <ns2:totalesSubTotales>
+          <ns2:totalPrecioNeto>161.14</ns2:totalPrecioNeto>
+          <ns2:totalITBMS>10.50</ns2:totalITBMS>
+          <ns2:totalISC xsi:nil="true"/>
+          <ns2:totalMontoGravado>10.50</ns2:totalMontoGravado>
+          <ns2:totalDescuento>0.00</ns2:totalDescuento>
+          <ns2:totalAcarreoCobrado>0.00</ns2:totalAcarreoCobrado>
+          <ns2:valorSeguroCobrado>0.00</ns2:valorSeguroCobrado>
+          <ns2:totalFactura>171.64</ns2:totalFactura>
+          <ns2:totalValorRecibido>171.64</ns2:totalValorRecibido>
+          <ns2:vuelto xsi:nil="true"/>
+          <ns2:tiempoPago>1</ns2:tiempoPago>
+          <ns2:nroItems>4</ns2:nroItems>
+          <ns2:totalTodosItems>171.64</ns2:totalTodosItems>
+          <ns2:listaDescBonificacion xsi:nil="true"/>
+          <ns2:listaFormaPago>
+            <ns2:formaPago>
+              <ns2:formaPagoFact>02</ns2:formaPagoFact>
+              <ns2:descFormaPago/>
+              <ns2:valorCuotaPagada>171.64</ns2:valorCuotaPagada>
+            </ns2:formaPago>
+          </ns2:listaFormaPago>
+          <ns2:retencion xsi:nil="true"/>
+          <ns2:listaPagoPlazo xsi:nil="true"/>
+        </ns2:totalesSubTotales>
+      </ns1:documento>
+    </ns1:Enviar>
+  </SOAP-ENV:Body>
+</SOAP-ENV:Envelope>
