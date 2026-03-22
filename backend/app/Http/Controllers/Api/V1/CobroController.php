@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
+
 namespace App\Http\Controllers\Api\V1;
+
 use App\Http\Controllers\Controller;
 use App\Services\CadenaControlService;
 use Illuminate\Http\JsonResponse;
@@ -15,123 +17,153 @@ class CobroController extends Controller
     {
         $q       = $request->query('q', '');
         $perPage = min((int) $request->query('per_page', 25), 100);
-        $params  = ['limit' => $perPage, 'tt' => 'FAC'];
+        $page    = max(1, (int) $request->query('page', 1));
+        $offset  = ($page - 1) * $perPage;
+        $params  = [];
         $where   = ["m.INTEGRADO = 0", "m.TIPOFACTURA = 'CREDITO'", "m.MONTOSAL > 0"];
 
         if ($q) {
-            $where[] = "(m.NUMREF LIKE :q OR m.CODIGO LIKE :q2 OR m.NOMBRE LIKE :q3)";
-            $params['q'] = "%{$q}%"; $params['q2'] = "%{$q}%"; $params['q3'] = "%{$q}%";
+            $where[]      = "(m.NUMREF LIKE :q OR m.CODIGO LIKE :q2 OR m.NOMBRE LIKE :q3)";
+            $params['q']  = "%{$q}%";
+            $params['q2'] = "%{$q}%";
+            $params['q3'] = "%{$q}%";
         }
 
+        $whereStr = implode(' AND ', $where);
+        $total    = (int) (DB::selectOne("SELECT COUNT(*) AS total FROM TRANSACCMAESTRO m WHERE {$whereStr}", $params)->total ?? 0);
+
+        $params['limit']  = $perPage;
+        $params['offset'] = $offset;
+
         $cobros = DB::select(
-            "SELECT TOP (:limit)
-                m.CONTROL, m.NUMREF, m.CODIGO, m.NOMBRE, m.FECEMIS,
-                m.MONTOTOT, m.MONTOSAL, m.FECVENCS, m.DIASVEN
+            "SELECT m.CONTROL AS CONTROLMAESTRO, m.NUMREF AS NROFAC,
+                m.CODIGO AS CODCLIENTE, m.NOMBRE AS NOMCLIENTE,
+                m.FECEMIS AS FECHA, m.MONTOTOT, m.MONTOSAL, m.FECVENCS, m.DIASVEN
              FROM TRANSACCMAESTRO m
-             WHERE " . implode(' AND ', $where) . "
-             ORDER BY m.FECVENCS ASC", $params
+             WHERE {$whereStr}
+             ORDER BY m.FECVENCS ASC
+             OFFSET :offset ROWS FETCH NEXT :limit ROWS ONLY", $params
         );
-        return response()->json(['data' => $cobros]);
+
+        return response()->json([
+            'data' => $cobros,
+            'meta' => ['total' => $total, 'per_page' => $perPage, 'current_page' => $page,
+                       'last_page' => (int) ceil($total / max(1, $perPage))],
+        ]);
     }
 
     public function show(string $id): JsonResponse
     {
         $control = base64_decode($id);
-        $factura = DB::selectOne("SELECT * FROM TRANSACCMAESTRO WHERE CONTROL = ? AND INTEGRADO = 0", [$control]);
+        $factura = DB::selectOne(
+            "SELECT CONTROL AS CONTROLMAESTRO, NUMREF AS NROFAC, NOMBRE AS NOMCLIENTE,
+                MONTOTOT, MONTOSAL FROM TRANSACCMAESTRO WHERE CONTROL = ? AND INTEGRADO = 0",
+            [$control]
+        );
         if (! $factura) return response()->json(['message' => 'Factura no encontrada.'], 404);
 
-        $pagosRealizados = DB::select(
-            "SELECT p.*, b.NOMBRE AS DESCRIP_PAGO FROM TRANSACCMAESTRO p
-             LEFT JOIN BASEINSTRUMENTOS b ON b.CODTAR = p.CODTAR
+        $cobros = DB::select(
+            "SELECT p.CONTROL AS CONTROLCOBRO, p.FECEMIS AS FECHA, p.MONTOTOT,
+                b.DESCRINSTRUMENTO
+             FROM TRANSACCMAESTRO p
+             LEFT JOIN BASEINSTRUMENTOS b ON b.CODINSTRUMENTO = p.CODTAR
              WHERE p.NUMREF = ? AND p.TIPTRAN = 'PAGxFAC' AND p.INTEGRADO = 0",
-            [$factura->NUMREF]
+            [$factura->NROFAC]
         );
-        return response()->json(['data' => ['factura' => $factura, 'cobros' => $pagosRealizados]]);
+        return response()->json(['data' => ['factura' => $factura, 'cobros' => $cobros]]);
     }
 
     public function store(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'control_factura' => ['required', 'string'],
-            'formas_pago'     => ['required', 'array', 'min:1'],
-            'formas_pago.*.codtar' => ['required', 'string'],
-            'formas_pago.*.monto'  => ['required', 'numeric', 'min:0.01'],
+            // Acepta controlmaestro en base64 o texto plano
+            'controlmaestro' => ['required', 'string'],
+            'instrumento'    => ['required', 'string', 'max:20'],
+            'monto'          => ['required', 'numeric', 'min:0.01'],
+            'referencia'     => ['nullable', 'string', 'max:100'],
         ]);
 
-        $controlFac = base64_decode($data['control_factura']);
+        // Intentar decodificar como base64; si falla, usar como plain
+        $decoded = base64_decode($data['controlmaestro'], strict: true);
+        $controlFac = ($decoded !== false && strlen($decoded) > 5) ? $decoded : $data['controlmaestro'];
+
         $factura = DB::selectOne(
-            "SELECT CONTROL, NUMREF, MONTOTOT, MONTOSAL, CODIGO FROM TRANSACCMAESTRO WHERE CONTROL = ? AND INTEGRADO = 0",
+            "SELECT CONTROL, NUMREF, MONTOTOT, MONTOSAL, CODIGO FROM TRANSACCMAESTRO
+             WHERE CONTROL = ? AND INTEGRADO = 0 AND MONTOSAL > 0",
             [$controlFac]
         );
-        if (! $factura) return response()->json(['message' => 'Factura no encontrada.'], 404);
-        if ((float) $factura->MONTOSAL <= 0) return response()->json(['message' => 'Esta factura ya está saldada.'], 422);
+        if (! $factura) return response()->json(['message' => 'Factura no encontrada o ya saldada.'], 404);
+        if ((float) $data['monto'] > (float) $factura->MONTOSAL + 0.01) {
+            return response()->json(['message' => 'El monto supera el saldo pendiente de $' . number_format($factura->MONTOSAL, 2) . '.'], 422);
+        }
 
-        $totalPagado = array_sum(array_column($data['formas_pago'], 'monto'));
-        if ($totalPagado > (float) $factura->MONTOSAL + 0.01) {
-            return response()->json(['message' => 'El monto del cobro supera el saldo pendiente.'], 422);
+        $instrumento = DB::selectOne(
+            "SELECT CODINSTRUMENTO, FUNCION FROM BASEINSTRUMENTOS WHERE CODINSTRUMENTO = ?",
+            [$data['instrumento']]
+        );
+        if (! $instrumento) {
+            return response()->json(['message' => 'Instrumento de pago inválido.'], 422);
         }
 
         DB::beginTransaction();
         try {
             $empresa = DB::selectOne("SELECT NROINIREC FROM BASEEMPRESA WHERE CONTROL = 1");
-            $nroPago = str_pad((string) ((int) $empresa->NROINIREC), 10, '0', STR_PAD_LEFT);
-            [$dias,$hora,$ale] = $this->cadena->componentes();
+            $nroPago = str_pad((string) ((int) ($empresa->NROINIREC ?? 1)), 10, '0', STR_PAD_LEFT);
+            [$dias, $hora, $ale] = $this->cadena->componentes();
             $controlCobro = "{$dias}{$hora}{$ale}RC";
+            $monto = round((float) $data['monto'], 2);
 
-            // Acumular montos por instrumento (como hace el legacy)
-            $montoTar = $montoChe = $montoInts1 = $montoEfe = 0;
-            foreach ($data['formas_pago'] as $fp) {
-                $inst = DB::selectOne("SELECT FUNCION FROM BASEINSTRUMENTOS WHERE CODTAR = ?", [$fp['codtar']]);
-                match ((int) ($inst?->FUNCION ?? 99)) {
-                    0 => $montoTar   += $fp['monto'],
-                    1 => $montoChe   += $fp['monto'],
-                    2, 3 => $montoInts1 += $fp['monto'],
-                    6 => $montoEfe   += $fp['monto'],
-                    default => null,
-                };
-            }
+            [$montoTar, $montoChe, $montoInts1, $montoEfe] = [0, 0, 0, 0];
+            match ((int) $instrumento->FUNCION) {
+                0 => $montoTar   = $monto,
+                1 => $montoChe   = $monto,
+                2, 3 => $montoInts1 = $monto,
+                6 => $montoEfe   = $monto,
+                default => $montoEfe = $monto,
+            };
 
             DB::statement(
                 "INSERT INTO TRANSACCMAESTRO
                     (CONTROL,TIPREG,TIPTRAN,NUMDOC,CODIGO,NOMBRE,FECEMIS,NUMREF,
                      MONTOTOT,MONTOTAR,MONTOCHE,MONTOINTS1,MONTOEFE,INTEGRADO)
-                 VALUES (:ctrl,'1','PAGxFAC',:numref,:cod,:nom,GETDATE(),:nroPago,
+                 VALUES (:ctrl,'1','PAGxFAC',:numref,:cod,'',GETDATE(),:nroPago,
                          :total,:tar,:che,:ints1,:efe,0)",
                 [
                     'ctrl' => $controlCobro, 'numref' => $factura->NUMREF,
-                    'cod' => $factura->CODIGO, 'nom' => '',
-                    'nroPago' => $nroPago, 'total' => round($totalPagado, 2),
-                    'tar' => round($montoTar,2), 'che' => round($montoChe,2),
-                    'ints1' => round($montoInts1,2), 'efe' => round($montoEfe,2),
+                    'cod' => $factura->CODIGO, 'nroPago' => $nroPago,
+                    'total' => $monto, 'tar' => $montoTar, 'che' => $montoChe,
+                    'ints1' => $montoInts1, 'efe' => $montoEfe,
                 ]
             );
 
-            foreach ($data['formas_pago'] as $fp) {
-                [$d2,$h2,$a2] = $this->cadena->componentes();
-                DB::statement(
-                    "INSERT INTO TRANSACCPAGOS (FECHORA,CONTROL,CODTAR,MONTOPAG,INTEGRADO)
-                     VALUES (:fh,:ctrl,:cod,:monto,0)",
-                    ['fh' => "{$d2}{$h2}{$a2}RP", 'ctrl' => $controlCobro,
-                     'cod' => $fp['codtar'], 'monto' => round((float)$fp['monto'],2)]
-                );
-            }
-
-            // Actualizar saldo de la factura
-            $nuevoSaldo = max(0, (float) $factura->MONTOSAL - $totalPagado);
+            [$d2, $h2, $a2] = $this->cadena->componentes();
             DB::statement(
-                "UPDATE TRANSACCMAESTRO SET MONTOSAL = :sal WHERE CONTROL = :ctrl",
-                ['sal' => round($nuevoSaldo, 2), 'ctrl' => $controlFac]
+                "INSERT INTO TRANSACCPAGOS (FECHORA,CONTROL,CODTAR,MONTOPAG,REFERENCIA,INTEGRADO)
+                 VALUES (:fh,:ctrl,:cod,:monto,:ref,0)",
+                [
+                    'fh' => "{$d2}{$h2}{$a2}RP", 'ctrl' => $controlCobro,
+                    'cod' => $data['instrumento'], 'monto' => $monto,
+                    'ref' => $data['referencia'] ?? '',
+                ]
             );
 
+            $nuevoSaldo = max(0.0, round((float) $factura->MONTOSAL - $monto, 2));
+            DB::statement(
+                "UPDATE TRANSACCMAESTRO SET MONTOSAL = :sal WHERE CONTROL = :ctrl",
+                ['sal' => $nuevoSaldo, 'ctrl' => $controlFac]
+            );
             DB::statement("UPDATE BASEEMPRESA SET NROINIREC = NROINIREC + 1 WHERE CONTROL = 1");
 
             DB::commit();
             return response()->json([
-                'message'      => 'Cobro registrado exitosamente.',
-                'control_cobro'=> base64_encode($controlCobro),
-                'saldo_restante'=> round($nuevoSaldo, 2),
+                'message'       => 'Cobro registrado exitosamente.',
+                'controlCobro'  => base64_encode($controlCobro),
+                'saldoRestante' => $nuevoSaldo,
             ], 201);
-        } catch (\Throwable $e) { DB::rollBack(); throw $e; }
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            throw $e;
+        }
     }
 
     public function update(Request $request, string $id): JsonResponse
@@ -144,10 +176,12 @@ class CobroController extends Controller
         $control = base64_decode($id);
         DB::beginTransaction();
         try {
-            $cobro = DB::selectOne("SELECT NUMREF, MONTOTOT FROM TRANSACCMAESTRO WHERE CONTROL = ? AND TIPTRAN = 'PAGxFAC'", [$control]);
+            $cobro = DB::selectOne(
+                "SELECT NUMREF, MONTOTOT FROM TRANSACCMAESTRO WHERE CONTROL = ? AND TIPTRAN = 'PAGxFAC'",
+                [$control]
+            );
             if (! $cobro) return response()->json(['message' => 'Cobro no encontrado.'], 404);
 
-            // Restaurar saldo de la factura original
             DB::statement(
                 "UPDATE TRANSACCMAESTRO SET MONTOSAL = MONTOSAL + :monto WHERE NUMREF = :ref AND TIPTRAN = 'FAC'",
                 ['monto' => $cobro->MONTOTOT, 'ref' => $cobro->NUMREF]
@@ -155,6 +189,9 @@ class CobroController extends Controller
             DB::statement("UPDATE TRANSACCMAESTRO SET INTEGRADO = 1 WHERE CONTROL = ?", [$control]);
             DB::commit();
             return response()->json(['message' => 'Cobro anulado y saldo restaurado.']);
-        } catch (\Throwable $e) { DB::rollBack(); throw $e; }
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            throw $e;
+        }
     }
 }

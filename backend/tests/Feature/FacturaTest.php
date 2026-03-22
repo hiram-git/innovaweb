@@ -127,21 +127,19 @@ class FacturaTest extends TestCase
         $response = $this->withToken($this->token)->postJson('/api/v1/facturas', []);
 
         $response->assertStatus(422)
-            ->assertJsonValidationErrors(['codigo_cliente', 'nombre_cliente', 'tipo_factura', 'items']);
+            ->assertJsonValidationErrors(['codcliente', 'tipoFactura', 'items']);
     }
 
-    public function test_store_falla_si_tipo_factura_es_invalido(): void
+    public function test_store_falla_si_tipoFactura_es_invalido(): void
     {
         $response = $this->withToken($this->token)->postJson('/api/v1/facturas', [
-            'codigo_cliente' => 'CLI001',
-            'nombre_cliente' => 'Test',
-            'tipo_cliente'   => '01',
-            'tipo_factura'   => 'INVALIDO',
-            'formas_pago'    => [['codtar' => 'EFE', 'monto' => 100]],
-            'items'          => [['codpro' => 'P001', 'descrip' => 'X', 'cantidad' => 1, 'precio' => 100, 'imppor' => 7]],
+            'codcliente'  => 'CLI001',
+            'tipoFactura' => 'INVALIDO',
+            'formasPago'  => [['instrumento' => 'EFE', 'monto' => 100]],
+            'items'       => [['codpro' => 'P001', 'descrip' => 'X', 'cantidad' => 1, 'precio' => 100, 'imppor' => 7]],
         ]);
 
-        $response->assertStatus(422)->assertJsonValidationErrors(['tipo_factura']);
+        $response->assertStatus(422)->assertJsonValidationErrors(['tipoFactura']);
     }
 
     // ─── Destroy ──────────────────────────────────────────────────────────────

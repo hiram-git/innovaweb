@@ -205,6 +205,73 @@ class FEController extends Controller
         return response()->json($resultado);
     }
 
+    // ─── Stats y documentos (usados por FEPage del frontend) ─────────────────
+
+    /**
+     * Estadísticas de FE: conteo por estado
+     */
+    public function stats(): JsonResponse
+    {
+        $row = DB::selectOne(
+            "SELECT
+                SUM(CASE WHEN d.RESULTADO IS NULL OR d.RESULTADO = '' THEN 1 ELSE 0 END) AS pendientes,
+                SUM(CASE WHEN d.RESULTADO = 'ENVIADO'   THEN 1 ELSE 0 END) AS enviados,
+                SUM(CASE WHEN d.RESULTADO = 'ACEPTADO'  THEN 1 ELSE 0 END) AS aceptados,
+                SUM(CASE WHEN d.RESULTADO = 'RECHAZADO' THEN 1 ELSE 0 END) AS rechazados
+             FROM TRANSACCMAESTRO m
+             LEFT JOIN Documentos d ON d.CONTROL = m.CONTROL
+             WHERE m.TIPTRAN = 'FAC' AND m.INTEGRADO = 0
+               AND m.FECEMIS >= DATEADD(month, -3, GETDATE())"
+        );
+
+        return response()->json([
+            'pendientes' => (int) ($row->pendientes ?? 0),
+            'enviados'   => (int) ($row->enviados   ?? 0),
+            'aceptados'  => (int) ($row->aceptados  ?? 0),
+            'rechazados' => (int) ($row->rechazados ?? 0),
+        ]);
+    }
+
+    /**
+     * Listado de documentos FE con filtro de estado
+     */
+    public function documentos(Request $request): JsonResponse
+    {
+        $estado  = $request->query('estado', '');
+        $perPage = min((int) $request->query('per_page', 50), 200);
+        $page    = max(1, (int) $request->query('page', 1));
+        $offset  = ($page - 1) * $perPage;
+
+        $where  = ["m.TIPTRAN = 'FAC'", "m.INTEGRADO = 0"];
+        $params = [];
+
+        if ($estado === '') {
+            // Sin filtro: mostrar todos (incluye los sin Documentos)
+        } elseif ($estado === 'PENDIENTE') {
+            $where[] = "(d.RESULTADO IS NULL OR d.RESULTADO = '' OR d.RESULTADO = 'PENDIENTE')";
+        } else {
+            $where[] = "d.RESULTADO = :estado";
+            $params['estado'] = $estado;
+        }
+
+        $whereStr = implode(' AND ', $where);
+        $params['limit']  = $perPage;
+        $params['offset'] = $offset;
+
+        $docs = DB::select(
+            "SELECT m.CONTROL AS CONTROLMAESTRO, m.NUMREF AS NROFAC,
+                m.NOMBRE AS NOMCLIENTE, m.FECEMIS AS FECHA, m.MONTOTOT,
+                d.CUFE, d.RESULTADO AS FE_ESTADO, d.MENSAJE AS FE_MENSAJE
+             FROM TRANSACCMAESTRO m
+             LEFT JOIN Documentos d ON d.CONTROL = m.CONTROL
+             WHERE {$whereStr}
+             ORDER BY m.FECEMIS DESC
+             OFFSET :offset ROWS FETCH NEXT :limit ROWS ONLY", $params
+        );
+
+        return response()->json(['data' => $docs]);
+    }
+
     private function bindFEConfig(array $data, string $suffix = ''): array
     {
         return [
