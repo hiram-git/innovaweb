@@ -1,0 +1,47 @@
+@import "tailwindcss";
+
+/* ─── Design Tokens InnovaWeb ─────────────────────────────────────────────── */
+@theme {
+  --color-brand-50:  #eff6ff;
+  --color-brand-100: #dbeafe;
+  --color-brand-500: #3b82f6;
+  --color-brand-600: #2563eb;
+  --color-brand-700: #1d4ed8;
+  --color-brand-900: #1e3a8a;
+
+  --color-surface:      #0f172a;
+  --color-surface-card: #1e293b;
+  --color-surface-muted:#334155;
+
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+/* ─── Reset base ─────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; font-family: var(--font-sans); background: #0f172a; color: #f1f5f9; }
+#root { min-height: 100dvh; }
+
+/* ─── Scrollbar personalizada ─────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #1e293b; }
+::-webkit-scrollbar-thumb { background: #475569; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #64748b; }
+
+/* ─── Animaciones PWA ─────────────────────────────────────────────────────── */
+@keyframes slide-in-up {
+  from { transform: translateY(100%); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.animate-slide-in-up { animation: slide-in-up 0.3s ease-out; }
+.animate-fade-in     { animation: fade-in 0.2s ease-out; }
+
+/* ─── Focus visible accesible ─────────────────────────────────────────────── */
+:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
