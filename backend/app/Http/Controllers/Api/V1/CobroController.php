@@ -20,7 +20,7 @@ class CobroController extends Controller
         $page    = max(1, (int) $request->query('page', 1));
         $offset  = ($page - 1) * $perPage;
         $params  = [];
-        $where   = ["m.INTEGRADO = 0", "m.TIPOFACTURA = 'CREDITO'", "m.MONTOSAL > 0"];
+        $where   = ["m.TIPOFACTURA = 'CREDITO'", "m.MONTOSAL > 0"];
 
         if ($q) {
             $where[]      = "(m.NUMREF LIKE :q OR m.CODIGO LIKE :q2 OR m.NOMBRE LIKE :q3)";
@@ -57,7 +57,7 @@ class CobroController extends Controller
         $control = base64_decode($id);
         $factura = DB::selectOne(
             "SELECT CONTROL AS CONTROLMAESTRO, NUMREF AS NROFAC, NOMBRE AS NOMCLIENTE,
-                MONTOTOT, MONTOSAL FROM TRANSACCMAESTRO WHERE CONTROL = ? AND INTEGRADO = 0",
+                MONTOTOT, MONTOSAL FROM TRANSACCMAESTRO WHERE CONTROL = ?",
             [$control]
         );
         if (! $factura) return response()->json(['message' => 'Factura no encontrada.'], 404);
@@ -67,7 +67,7 @@ class CobroController extends Controller
                 b.DESCRINSTRUMENTO
              FROM TRANSACCMAESTRO p
              LEFT JOIN BASEINSTRUMENTOS b ON b.CODINSTRUMENTO = p.CODTAR
-             WHERE p.NUMREF = ? AND p.TIPTRAN = 'PAGxFAC' AND p.INTEGRADO = 0",
+             WHERE p.NUMREF = ? AND p.TIPTRAN = 'PAGxFAC'",
             [$factura->NROFAC]
         );
         return response()->json(['data' => ['factura' => $factura, 'cobros' => $cobros]]);
@@ -89,7 +89,7 @@ class CobroController extends Controller
 
         $factura = DB::selectOne(
             "SELECT CONTROL, NUMREF, MONTOTOT, MONTOSAL, CODIGO FROM TRANSACCMAESTRO
-             WHERE CONTROL = ? AND INTEGRADO = 0 AND MONTOSAL > 0",
+             WHERE CONTROL = ? AND MONTOSAL > 0",
             [$controlFac]
         );
         if (! $factura) return response()->json(['message' => 'Factura no encontrada o ya saldada.'], 404);
@@ -125,9 +125,9 @@ class CobroController extends Controller
             DB::statement(
                 "INSERT INTO TRANSACCMAESTRO
                     (CONTROL,TIPREG,TIPTRAN,NUMDOC,CODIGO,NOMBRE,FECEMIS,NUMREF,
-                     MONTOTOT,MONTOTAR,MONTOCHE,MONTOINTS1,MONTOEFE,INTEGRADO)
+                     MONTOTOT,MONTOTAR,MONTOCHE,MONTOINTS1,MONTOEFE)
                  VALUES (:ctrl,'1','PAGxFAC',:numref,:cod,'',GETDATE(),:nroPago,
-                         :total,:tar,:che,:ints1,:efe,0)",
+                         :total,:tar,:che,:ints1,:efe)",
                 [
                     'ctrl' => $controlCobro, 'numref' => $factura->NUMREF,
                     'cod' => $factura->CODIGO, 'nroPago' => $nroPago,
@@ -186,7 +186,7 @@ class CobroController extends Controller
                 "UPDATE TRANSACCMAESTRO SET MONTOSAL = MONTOSAL + :monto WHERE NUMREF = :ref AND TIPTRAN = 'FAC'",
                 ['monto' => $cobro->MONTOTOT, 'ref' => $cobro->NUMREF]
             );
-            DB::statement("UPDATE TRANSACCMAESTRO SET INTEGRADO = 1 WHERE CONTROL = ?", [$control]);
+            DB::statement("DELETE FROM TRANSACCMAESTRO WHERE CONTROL = ?", [$control]);
             DB::commit();
             return response()->json(['message' => 'Cobro anulado y saldo restaurado.']);
         } catch (\Throwable $e) {

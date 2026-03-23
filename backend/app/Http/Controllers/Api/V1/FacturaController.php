@@ -24,7 +24,7 @@ class FacturaController extends Controller
         $page     = max(1, (int) $request->query('page', 1));
         $offset   = ($page - 1) * $perPage;
 
-        $where  = ["m.TIPTRAN = 'FAC'", "m.INTEGRADO = 0"];
+        $where  = ["m.TIPTRAN = 'FAC'"];
         $params = [];
 
         if ($q) {
@@ -80,7 +80,7 @@ class FacturaController extends Controller
                 d.CUFE, d.QR, d.RESULTADO AS FE_ESTADO, d.PDF
              FROM TRANSACCMAESTRO m
              LEFT JOIN Documentos d ON d.CONTROL = m.CONTROL
-             WHERE m.CONTROL = ? AND m.INTEGRADO = 0", [$control]
+             WHERE m.CONTROL = ?", [$control]
         );
         if (! $maestro) return response()->json(['message' => 'Factura no encontrada.'], 404);
 
@@ -171,10 +171,10 @@ class FacturaController extends Controller
                 "INSERT INTO TRANSACCMAESTRO
                     (CONTROL,TIPREG,TIPTRAN,TIPOFACTURA,CODIGO,NOMBRE,DIRECC1,
                      FECEMIS,NUMREF,MONTOBRU,MONTOIMP,MONTODES,MONTOTOT,
-                     MONTOSAL,CAMBIO,DIASVEN,FECVENCS,TIPOCLI,CODVEN,INTEGRADO)
+                     MONTOSAL,CAMBIO,DIASVEN,FECVENCS,TIPOCLI,CODVEN)
                  VALUES (:ctrl,'1','FAC',:tipofac,:codigo,:nombre,:direcc,
                      GETDATE(),:numref,:montobru,:montoimp,:montodes,:montotot,
-                     :montosal,:cambio,:diasven,:fecvencs,:tipocli,:codven,0)",
+                     :montosal,:cambio,:diasven,:fecvencs,:tipocli,:codven)",
                 [
                     'ctrl' => $controlMaestro, 'tipofac' => $tipoFactura,
                     'codigo' => $codCliente, 'nombre' => $cliente->NOMBRE,
@@ -294,7 +294,7 @@ class FacturaController extends Controller
         $factura = DB::selectOne(
             "SELECT m.CONTROL, d.CUFE FROM TRANSACCMAESTRO m
              LEFT JOIN Documentos d ON d.CONTROL = m.CONTROL AND d.CUFE != ''
-             WHERE m.CONTROL = ? AND m.INTEGRADO = 0", [$control]
+             WHERE m.CONTROL = ?", [$control]
         );
         if (! $factura) return response()->json(['message' => 'Factura no encontrada.'], 404);
         if (! empty($factura->CUFE)) {
@@ -309,7 +309,7 @@ class FacturaController extends Controller
                     ['c' => $d->CANTIDAD, 'p' => $d->CODPRO]
                 );
             }
-            DB::statement("UPDATE TRANSACCMAESTRO SET INTEGRADO = 1 WHERE CONTROL = ?", [$control]);
+            DB::statement("DELETE FROM TRANSACCMAESTRO WHERE CONTROL = ?", [$control]);
             DB::commit();
             return response()->json(['message' => 'Factura anulada.']);
         } catch (\Throwable $e) {

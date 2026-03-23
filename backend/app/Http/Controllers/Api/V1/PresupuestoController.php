@@ -16,7 +16,7 @@ class PresupuestoController extends Controller
         $q       = $request->query('q', '');
         $perPage = min((int) $request->query('per_page', 25), 100);
         $params  = ['limit' => $perPage, 'tiptran' => 'PRE'];
-        $where   = ["m.TIPTRAN = :tiptran", "m.INTEGRADO = 0"];
+        $where   = ["m.TIPTRAN = :tiptran"];
 
         if ($q) {
             $where[] = "(m.NUMREF LIKE :q OR m.CODIGO LIKE :q2 OR m.NOMBRE LIKE :q3)";
@@ -38,7 +38,7 @@ class PresupuestoController extends Controller
     {
         $control = base64_decode($id);
         $maestro = DB::selectOne(
-            "SELECT * FROM TRANSACCMAESTRO WHERE CONTROL = ? AND TIPTRAN = 'PRE' AND INTEGRADO = 0", [$control]
+            "SELECT * FROM TRANSACCMAESTRO WHERE CONTROL = ? AND TIPTRAN = 'PRE'", [$control]
         );
         if (! $maestro) return response()->json(['message' => 'Presupuesto no encontrado.'], 404);
 
@@ -95,9 +95,9 @@ class PresupuestoController extends Controller
             DB::statement(
                 "INSERT INTO TRANSACCMAESTRO
                     (CONTROL,TIPREG,TIPTRAN,CODIGO,NOMBRE,FECEMIS,NUMREF,
-                     MONTOBRU,MONTOIMP,MONTODES,MONTOTOT,TIPOCLI,CODVEN,INTEGRADO)
+                     MONTOBRU,MONTOIMP,MONTODES,MONTOTOT,TIPOCLI,CODVEN)
                  VALUES (:ctrl,'1','PRE',:cod,:nom,GETDATE(),:numref,
-                         :bru,:imp,:des,:tot,:tcli,:cven,0)",
+                         :bru,:imp,:des,:tot,:tcli,:cven)",
                 [
                     'ctrl' => $control, 'cod' => $codCliente,
                     'nom' => $cliente->NOMBRE, 'numref' => $numref,
@@ -158,7 +158,7 @@ class PresupuestoController extends Controller
 
     public function destroy(string $id): JsonResponse
     {
-        DB::statement("UPDATE TRANSACCMAESTRO SET INTEGRADO=1 WHERE CONTROL=? AND TIPTRAN='PRE'", [base64_decode($id)]);
+        DB::statement("DELETE FROM TRANSACCMAESTRO WHERE CONTROL=? AND TIPTRAN='PRE'", [base64_decode($id)]);
         return response()->json(['message' => 'Presupuesto eliminado.']);
     }
 
@@ -178,7 +178,7 @@ class PresupuestoController extends Controller
         ]);
 
         $pres = DB::selectOne(
-            "SELECT * FROM TRANSACCMAESTRO WHERE CONTROL = ? AND TIPTRAN = 'PRE' AND INTEGRADO = 0", [$controlPre]
+            "SELECT * FROM TRANSACCMAESTRO WHERE CONTROL = ? AND TIPTRAN = 'PRE'", [$controlPre]
         );
         if (! $pres) return response()->json(['message' => 'Presupuesto no encontrado.'], 404);
 
@@ -205,9 +205,9 @@ class PresupuestoController extends Controller
                 "INSERT INTO TRANSACCMAESTRO
                     (CONTROL,TIPREG,TIPTRAN,TIPOFACTURA,CODIGO,NOMBRE,FECEMIS,NUMREF,
                      MONTOBRU,MONTOIMP,MONTODES,MONTOTOT,MONTOSAL,CAMBIO,
-                     DIASVEN,FECVENCS,TIPOCLI,CODVEN,INTEGRADO)
+                     DIASVEN,FECVENCS,TIPOCLI,CODVEN)
                  VALUES (:ctrl,'1','FAC',:tipofac,:cod,:nom,GETDATE(),:numref,
-                         :bru,:imp,:des,:tot,:sal,:cambio,:dias,:fvenc,:tcli,:cven,0)",
+                         :bru,:imp,:des,:tot,:sal,:cambio,:dias,:fvenc,:tcli,:cven)",
                 [
                     'ctrl' => $controlFac, 'tipofac' => $data['tipoFactura'],
                     'cod' => $pres->CODIGO, 'nom' => $pres->NOMBRE,
@@ -249,8 +249,7 @@ class PresupuestoController extends Controller
             }
 
             DB::statement("UPDATE BASEEMPRESA SET NROINIFAC=NROINIFAC+1 WHERE CONTROL=1");
-            // Marcar presupuesto como convertido (INTEGRADO=2)
-            DB::statement("UPDATE TRANSACCMAESTRO SET INTEGRADO=2 WHERE CONTROL=?", [$controlPre]);
+            DB::statement("DELETE FROM TRANSACCMAESTRO WHERE CONTROL=? AND TIPTRAN='PRE'", [$controlPre]);
             DB::commit();
 
             return response()->json([
