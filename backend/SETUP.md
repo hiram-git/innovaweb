@@ -285,3 +285,138 @@ php artisan make:model Cliente -mcr
 # Listar todas las rutas con sus middlewares
 php artisan route:list --columns=method,uri,name,middleware
 ```
+
+---
+
+## Registro de errores resueltos durante la implementación
+
+Esta sección documenta los problemas reales que aparecieron al levantar el
+entorno por primera vez, con su causa y solución, para no repetirlos.
+
+---
+
+### Error 1 — `Please provide a valid cache path`
+
+**Síntoma:** Laravel lanza esta excepción al hacer cualquier request.
+
+**Causa:** El archivo `config/view.php` no existía en el repositorio (fue
+omitido al crear el proyecto), y los directorios `storage/framework/views` y
+`storage/framework/sessions` estaban excluidos por `.gitignore`.
+
+**Solución:**
+1. Se creó el archivo `backend/config/view.php` con la configuración estándar
+   de Laravel.
+2. Se crean los directorios manualmente al clonar el repo:
+   ```powershell
+   mkdir storage\framework\views, storage\framework\sessions -Force
+   ```
+
+---
+
+### Error 2 — Incompatibilidad Vite 8 con `vite-plugin-pwa`
+
+**Síntoma:** `npm install` falla con conflicto de peer dependencies entre
+`vite-plugin-pwa@1.2.0` (soporta Vite ^3–^7) y `@vitejs/plugin-react@6`
+(requiere Vite ^8).
+
+**Causa:** Se instaló Vite 8 (Rolldown) que aún no tiene soporte oficial en
+`vite-plugin-pwa`.
+
+**Solución:** Downgrade en `package.json`:
+```json
+"vite": "^7.0.0",
+"@vitejs/plugin-react": "^5.0.0"
+```
+
+---
+
+### Error 3 — Axios apuntaba al frontend en lugar del backend
+
+**Síntoma:** Las peticiones API llegaban a `localhost:5173` en vez de al
+backend Laravel.
+
+**Causa:** El `baseURL` de Axios estaba hardcodeado como `'/api/v1'` (ruta
+relativa), por lo que el browser resolvía contra el origen del frontend.
+
+**Solución:** Se cambió a `import.meta.env.VITE_API_URL` en
+`frontend/src/lib/axios.ts`, y se definió `VITE_API_URL=http://innovaweb.test`
+en el `.env` del frontend.
+
+---
+
+### Error 4 — Typo en el dominio del proxy de Vite
+
+**Síntoma:** Las peticiones a `/api/*` no llegaban al backend aunque el
+`baseURL` estaba correcto.
+
+**Causa:** El proxy en `vite.config.ts` y los patrones de caché de Workbox
+apuntaban al dominio erróneo: `innovanew.test` en lugar de `innovaweb.test`.
+
+**Solución:** Se corrigió el typo en `frontend/vite.config.ts`:
+```ts
+target: 'http://innovaweb.test',  // era: innovanew.test
+```
+
+---
+
+### Error 5 — CORS: preflight OPTIONS bloqueado
+
+**Síntoma:** El browser rechazaba todas las peticiones con error CORS. Las
+requests `OPTIONS` no recibían los headers `Access-Control-*`.
+
+**Causa (en dos pasos):**
+1. Faltaba registrar `HandleCors` como primer middleware global en Laravel.
+2. Apache interceptaba el preflight antes de que llegara a PHP.
+
+**Solución (en dos pasos):**
+1. Se creó `backend/config/cors.php` y se registró `HandleCors` como primer
+   middleware en `backend/bootstrap/app.php`.
+2. Se agregó en `backend/public/.htaccess` un bloque para responder `204` a
+   `OPTIONS` antes del rewrite de Laravel.
+
+> **Nota:** este enfoque fue luego **revertido** (ver Error 6).
+
+---
+
+### Error 6 — `.htaccess` roto por bloque `mod_headers` inválido
+
+**Síntoma:** Apache devolvía 500 en todas las rutas tras el fix del Error 5.
+
+**Causa:** El bloque `mod_headers` con `RewriteEngine` dentro de `.htaccess`
+es inválido en el contexto de un `.htaccess` de Laravel.
+
+**Solución definitiva:** Se revirtió `.htaccess` al estado original de Laravel
+y se adoptó la estrategia correcta para CORS en desarrollo: usar el **proxy de
+Vite** (`/api → http://innovaweb.test`) para que el browser nunca haga
+peticiones cross-origin. El middleware CORS de Laravel queda activo solo para
+producción.
+
+Cambios en `frontend/src/lib/axios.ts`:
+```ts
+baseURL: '/api/v1'  // relativo → pasa por el proxy de Vite
+```
+
+---
+
+### Error 7 — Login falla con `Invalid column name 'INTEGRADO'`
+
+**Síntoma:** Al hacer login, SQL Server devuelve
+`SQLSTATE[42S22]: Invalid column name 'INTEGRADO'`.
+
+**Causa:** La tabla `BASEUSUARIOS` del ERP Clarion no tiene columna
+`INTEGRADO`. La condición `AND INTEGRADO = 0` fue añadida por analogía con
+otras tablas del ERP que sí la tienen.
+
+**Archivo afectado:** `backend/app/Http/Controllers/Api/V1/AuthController.php`
+
+**Solución:** Se eliminó `AND INTEGRADO = 0` del `WHERE` en la query de login.
+La tabla `BASEUSUARIOS` no usa ese campo de control; la autenticación se
+verifica comparando `CLAVE` / `CLAVEWEB`.
+
+```php
+// Antes
+"SELECT ... FROM BASEUSUARIOS WHERE CODUSER = ? AND INTEGRADO = 0"
+
+// Después
+"SELECT ... FROM BASEUSUARIOS WHERE CODUSER = ?"
+```

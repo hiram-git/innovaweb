@@ -30,8 +30,7 @@ class AuthController extends Controller
         $usuario = DB::selectOne(
             "SELECT CODUSER, CLAVE, CLAVEWEB, VALVENDEDOR, VALDEPOSITO
              FROM BASEUSUARIOS
-             WHERE CODUSER = ?
-               AND INTEGRADO = 0",
+             WHERE CODUSER = ?",
             [strtoupper(trim($request->usuario))]
         );
 
