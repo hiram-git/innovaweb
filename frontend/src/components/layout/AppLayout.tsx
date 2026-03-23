@@ -2,6 +2,7 @@ import { Outlet, NavLink } from 'react-router-dom'
 import { Sidebar } from './Sidebar'
 import { OfflineBanner } from '@/components/ui/OfflineBanner'
 import { OfflineQueue } from '@/components/ui/OfflineQueue'
+import { InstallPWA } from '@/components/ui/InstallPWA'
 import { useOnlineStatus } from '@/hooks/useOnlineStatus'
 import { FileText, Users, Package, DollarSign, LayoutDashboard } from 'lucide-react'
 import { clsx } from 'clsx'
@@ -31,6 +32,8 @@ export function AppLayout() {
       </main>
       {/* Offline queue floating button */}
       <OfflineQueue />
+      {/* PWA install prompt */}
+      <InstallPWA />
       {/* Bottom nav — mobile only */}
       <nav className="fixed bottom-0 inset-x-0 border-t border-slate-700 bg-slate-900 flex md:hidden z-30">
         {mobileNav.map(({ to, icon: Icon, label }) => (
