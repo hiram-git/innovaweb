@@ -13,6 +13,9 @@ return Application::configure(basePath: dirname(__DIR__))
         apiPrefix: 'api',
     )
     ->withMiddleware(function (Middleware $middleware) {
+        // CORS — debe ir antes que cualquier otro middleware
+        $middleware->prepend(\Illuminate\Http\Middleware\HandleCors::class);
+
         // Cabeceras de seguridad HTTP en todas las respuestas
         $middleware->append(\App\Http\Middleware\SecurityHeaders::class);
 
