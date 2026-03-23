@@ -1,16 +1,3 @@
-<IfModule mod_headers.c>
-    SetEnvIf Origin "^http://(localhost:5173|innovaweb\.test)$" CORS_ORIGIN=$0
-    Header always set Access-Control-Allow-Origin "%{CORS_ORIGIN}e" env=CORS_ORIGIN
-    Header always set Access-Control-Allow-Methods "GET, POST, PUT, PATCH, DELETE, OPTIONS"
-    Header always set Access-Control-Allow-Headers "Content-Type, Authorization, Accept, X-Requested-With"
-    Header always set Access-Control-Max-Age "3600"
-
-    # Responder al preflight OPTIONS directamente desde Apache
-    RewriteEngine On
-    RewriteCond %{REQUEST_METHOD} OPTIONS
-    RewriteRule ^ - [R=204,L]
-</IfModule>
-
 <IfModule mod_rewrite.c>
     <IfModule mod_negotiation.c>
         Options -MultiViews -Indexes
