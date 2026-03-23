@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Services\VersionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -16,8 +17,10 @@ class AuthController extends Controller
     /**
      * Login — autentica contra la tabla BASEUSUARIOS del ERP
      *
-     * La tabla BASEUSUARIOS usa su propio sistema de contraseñas (CLAVE/CLAVEWEB),
-     * por lo que se mantiene compatibilidad con el ERP Clarion.
+     * Lógica de campos según versión del ERP (BASEEMPRESA.CTAVENIMP):
+     *   - versión >= 24 → usa CLAVEWEB (bcrypt). Si está vacía el usuario debe
+     *                     establecer una clave nueva antes de ingresar.
+     *   - versión <  24 → usa CLAVE (plain-text legado del ERP Clarion).
      */
     public function login(Request $request): JsonResponse
     {
@@ -40,25 +43,40 @@ class AuthController extends Controller
             ]);
         }
 
-        // Verificar contraseña (CLAVEWEB tiene preferencia si está definida)
+        // Determinar versión del ERP para saber qué campo de clave usar
+        $empresa = DB::selectOne("SELECT TOP 1 CTAVENIMP FROM BASEEMPRESA");
+        $version = VersionService::parse($empresa->CTAVENIMP ?? null);
+
         $claveValida    = false;
         $necesitaRehash = false;
-        $claveWeb       = trim($usuario->CLAVEWEB ?? '');
-        $claveErp       = trim($usuario->CLAVE ?? '');
         $passwordIn     = trim($request->password);
 
-        if ($claveWeb !== '') {
+        if ($version !== null && $version >= 24) {
+            // ERP moderno: autenticar con CLAVEWEB
+            $claveWeb = trim($usuario->CLAVEWEB ?? '');
+
+            if ($claveWeb === '') {
+                // Usuario existe pero aún no tiene CLAVEWEB — debe crear su clave
+                return response()->json([
+                    'code'    => 'password_not_set',
+                    'message' => 'Debe establecer una contraseña antes de ingresar.',
+                    'usuario' => strtoupper(trim($request->usuario)),
+                ], 403);
+            }
+
             if (Hash::isHashed($claveWeb)) {
-                // Ya está en bcrypt — verificación normal
                 $claveValida = Hash::check($passwordIn, $claveWeb);
             } else {
-                // Clave legacy plain-text: comparar directo y marcar para rehash
+                // CLAVEWEB aún es plain-text: comparar y marcar para rehash
                 $claveValida    = $passwordIn === $claveWeb;
                 $necesitaRehash = $claveValida;
             }
-        } elseif ($claveErp !== '') {
-            // Sólo tiene CLAVE del ERP (sin CLAVEWEB): comparar y crear CLAVEWEB
-            $claveValida    = $passwordIn === $claveErp;
+        } else {
+            // ERP legado (versión < 24 o sin versión): autenticar con CLAVE
+            $claveErp    = trim($usuario->CLAVE ?? '');
+            $claveValida = $passwordIn === $claveErp;
+
+            // Aprovechar para escribir CLAVEWEB en bcrypt (migración preventiva)
             $necesitaRehash = $claveValida;
         }
 
@@ -68,7 +86,7 @@ class AuthController extends Controller
             ]);
         }
 
-        // Migración gradual: si la clave era plain-text, actualizar a bcrypt en BASEUSUARIOS
+        // Migración gradual: escribir CLAVEWEB con bcrypt si venía en plain-text
         if ($necesitaRehash) {
             DB::statement(
                 "UPDATE BASEUSUARIOS SET CLAVEWEB = ? WHERE CODUSER = ?",

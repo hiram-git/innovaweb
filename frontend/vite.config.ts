@@ -95,6 +95,7 @@ export default defineConfig({
     alias: { '@': path.resolve(__dirname, './src') },
   },
   server: {
+    host: true,   // escucha en 0.0.0.0 → accesible desde la red local
     port: 5173,
     proxy: {
       '/api': {

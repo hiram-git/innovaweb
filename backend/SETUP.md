@@ -420,3 +420,44 @@ verifica comparando `CLAVE` / `CLAVEWEB`.
 // Después
 "SELECT ... FROM BASEUSUARIOS WHERE CODUSER = ?"
 ```
+
+---
+
+### Error 8 — `This password does not use the Bcrypt algorithm` + versión no validada
+
+**Síntoma:** Al hacer login, Laravel lanza `RuntimeException: This password does
+not use the Bcrypt algorithm`, y no se respetaba la lógica de versión del ERP
+para decidir qué campo de clave usar.
+
+**Causa (dos problemas combinados):**
+1. `Hash::check()` lanza excepción cuando el segundo argumento no es un hash
+   bcrypt válido (texto plano del ERP).
+2. El `AuthController` no consultaba `BASEEMPRESA.CTAVENIMP` para saber si el
+   ERP usa `CLAVE` (versión < 24) o `CLAVEWEB` (versión ≥ 24), como sí hacía
+   el archivo legacy `grabar_login.php`.
+3. La función `parseVersion()` del legacy tenía un bug de regex que fallaba con
+   formatos como `"Ver. 1.9.21b"`, `"Version 1.8.53"`, `"Versión 6"`, etc.
+
+**Solución:**
+
+Se creó `App\Services\VersionService::parse()` con un algoritmo robusto:
+extrae todos los grupos de dígitos del string y devuelve el tercero (índice 2),
+o el último si hay menos de tres. Esto cubre todos los formatos del ERP:
+
+| Entrada | Segmentos | Resultado |
+|---|---|---|
+| `"Ver. 1.97.27.1"` | [1,97,27,1] | **27** |
+| `"Versión 1.97.10 H"` | [1,97,10] | **10** |
+| `"Ver. 1.9.21b"` | [1,9,21] | **21** |
+| `"Version 1.8.53"` | [1,8,53] | **53** |
+| `"Ver. CR 25"` | [25] | **25** |
+| `"Versión 6"` | [6] | **6** |
+| `"V. 1.97.22.3.8-alpha"` | [1,97,22,3,8] | **22** |
+
+Se actualizó `AuthController::login()` para:
+- Consultar `SELECT TOP 1 CTAVENIMP FROM BASEEMPRESA` en cada login.
+- Si versión ≥ 24 y `CLAVEWEB` vacía → responder HTTP 403 con
+  `code: "password_not_set"` (el frontend redirige a la pantalla de crear clave).
+- Si versión ≥ 24 y `CLAVEWEB` es plain-text → verificar y hacer rehash a bcrypt.
+- Si versión < 24 → autenticar contra `CLAVE` y escribir `CLAVEWEB` en bcrypt
+  como migración preventiva.
