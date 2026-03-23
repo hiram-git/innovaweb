@@ -101,8 +101,9 @@ describe('api axios client', () => {
 
   // ─── Base config ────────────────────────────────────────────────────────────
 
-  it('usa /api/v1 como baseURL', () => {
-    expect(api.defaults.baseURL).toBe('/api/v1')
+  it('usa VITE_API_URL + /api/v1 como baseURL', () => {
+    const expected = `${import.meta.env.VITE_API_URL ?? ''}/api/v1`
+    expect(api.defaults.baseURL).toBe(expected)
   })
 
   it('establece Content-Type y Accept como application/json', () => {
