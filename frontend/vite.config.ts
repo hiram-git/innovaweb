@@ -18,7 +18,7 @@ export default defineConfig({
         runtimeCaching: [
           {
             // API de solo lectura: StaleWhileRevalidate (rápido + actualiza en BG)
-            urlPattern: /^https?:\/\/innovanew\.test\/api\/v1\/(clientes|inventario|presupuestos)/,
+            urlPattern: /^https?:\/\/innovaweb\.test\/api\/v1\/(clientes|inventario|presupuestos)/,
             handler: 'StaleWhileRevalidate',
             options: {
               cacheName: 'api-read-cache',
@@ -28,7 +28,7 @@ export default defineConfig({
           },
           {
             // Facturas: NetworkFirst (siempre intenta red primero)
-            urlPattern: /^https?:\/\/innovanew\.test\/api\/v1\/facturas/,
+            urlPattern: /^https?:\/\/innovaweb\.test\/api\/v1\/facturas/,
             handler: 'NetworkFirst',
             options: {
               cacheName: 'facturas-cache',
@@ -98,7 +98,7 @@ export default defineConfig({
     port: 5173,
     proxy: {
       '/api': {
-        target: 'http://innovanew.test',
+        target: 'http://innovaweb.test',
         changeOrigin: true,
         secure: false,
       },
