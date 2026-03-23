@@ -41,23 +41,39 @@ class AuthController extends Controller
         }
 
         // Verificar contraseña (CLAVEWEB tiene preferencia si está definida)
-        $claveValida = false;
-        $claveWeb    = trim($usuario->CLAVEWEB ?? '');
-        $claveErp    = trim($usuario->CLAVE ?? '');
-        $passwordIn  = trim($request->password);
+        $claveValida    = false;
+        $necesitaRehash = false;
+        $claveWeb       = trim($usuario->CLAVEWEB ?? '');
+        $claveErp       = trim($usuario->CLAVE ?? '');
+        $passwordIn     = trim($request->password);
 
         if ($claveWeb !== '') {
-            // CLAVEWEB puede estar hasheada con bcrypt (migración gradual)
-            $claveValida = Hash::check($passwordIn, $claveWeb)
-                || $passwordIn === $claveWeb;  // fallback plain text legacy
+            if (Hash::isHashed($claveWeb)) {
+                // Ya está en bcrypt — verificación normal
+                $claveValida = Hash::check($passwordIn, $claveWeb);
+            } else {
+                // Clave legacy plain-text: comparar directo y marcar para rehash
+                $claveValida    = $passwordIn === $claveWeb;
+                $necesitaRehash = $claveValida;
+            }
         } elseif ($claveErp !== '') {
-            $claveValida = $passwordIn === $claveErp;  // legacy ERP
+            // Sólo tiene CLAVE del ERP (sin CLAVEWEB): comparar y crear CLAVEWEB
+            $claveValida    = $passwordIn === $claveErp;
+            $necesitaRehash = $claveValida;
         }
 
         if (! $claveValida) {
             throw ValidationException::withMessages([
                 'usuario' => ['Las credenciales proporcionadas son incorrectas.'],
             ]);
+        }
+
+        // Migración gradual: si la clave era plain-text, actualizar a bcrypt en BASEUSUARIOS
+        if ($necesitaRehash) {
+            DB::statement(
+                "UPDATE BASEUSUARIOS SET CLAVEWEB = ? WHERE CODUSER = ?",
+                [Hash::make($passwordIn), $usuario->CODUSER]
+            );
         }
 
         // Obtener o crear el User de Laravel correspondiente
