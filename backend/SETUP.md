@@ -147,24 +147,32 @@ La extensión `sqlsrv` de PHP necesita este driver para comunicarse con SQL Serv
    php artisan key:generate
    ```
 
-4. Instala las dependencias (si no se hicieron ya):
+4. Crea los directorios de almacenamiento requeridos por Laravel:
+   ```powershell
+   mkdir storage\framework\views, storage\framework\sessions -Force
+   ```
+   > Estos directorios están excluidos del repositorio (`.gitignore`) y deben
+   > crearse manualmente. Sin ellos Laravel lanza el error
+   > `Please provide a valid cache path`.
+
+5. Instala las dependencias (si no se hicieron ya):
    ```bash
    composer install
    ```
 
-5. Publica las configuraciones de Sanctum:
+6. Publica las configuraciones de Sanctum:
    ```bash
    php artisan vendor:publish --provider="Laravel\Sanctum\SanctumServiceProvider"
    ```
 
-6. Ejecuta las migraciones:
+7. Ejecuta las migraciones:
    ```bash
    php artisan migrate
    ```
    > Esto crea las tablas de Laravel en SQL Server (migrations, sessions, etc.)
    > Las tablas del ERP NO se tocan.
 
-7. Verifica la conexión a SQL Server:
+8. Verifica la conexión a SQL Server:
    ```bash
    php artisan tinker
    >>> DB::select('SELECT @@VERSION')
@@ -222,6 +230,13 @@ C:\laragon\
 ---
 
 ## Solución de problemas comunes
+
+### Error: "Please provide a valid cache path"
+- Laravel no encuentra los directorios `storage/framework/views` o `storage/framework/sessions`
+- Crea los directorios manualmente (están excluidos del repositorio):
+  ```powershell
+  mkdir storage\framework\views, storage\framework\sessions -Force
+  ```
 
 ### Error: "could not find driver"
 - La extension `pdo_sqlsrv` no está activa
