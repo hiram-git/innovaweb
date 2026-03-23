@@ -2,13 +2,16 @@
 
 /* ─── Design Tokens InnovaWeb ─────────────────────────────────────────────── */
 @theme {
-  --color-brand-50:  #eff6ff;
-  --color-brand-100: #dbeafe;
-  --color-brand-500: #3b82f6;
-  --color-brand-600: #2563eb;
-  --color-brand-700: #1d4ed8;
-  --color-brand-900: #1e3a8a;
+  /* Naranja primario — hereda del legacy Now UI Dashboard (#f96332) */
+  --color-brand-50:  #fff4ef;
+  --color-brand-100: #ffe2d0;
+  --color-brand-300: #fda07a;
+  --color-brand-500: #f96332;
+  --color-brand-600: #e04e1e;
+  --color-brand-700: #b83d18;
+  --color-brand-900: #6b220f;
 
+  /* Superficies oscuras */
   --color-surface:      #0f172a;
   --color-surface-card: #1e293b;
   --color-surface-muted:#334155;
@@ -42,6 +45,6 @@ body { margin: 0; font-family: var(--font-sans); background: #0f172a; color: #f1
 
 /* ─── Focus visible accesible ─────────────────────────────────────────────── */
 :focus-visible {
-  outline: 2px solid #3b82f6;
+  outline: 2px solid #f96332;
   outline-offset: 2px;
 }

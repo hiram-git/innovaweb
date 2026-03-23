@@ -87,7 +87,7 @@ export function CobrosPage() {
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
         <input type="text" placeholder="Buscar por número o cliente…" value={search}
           onChange={e => setSearch(e.target.value)}
-          className="w-full rounded-lg border border-slate-700 bg-slate-800 py-2 pl-9 pr-4 text-sm text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none" />
+          className="w-full rounded-lg border border-slate-700 bg-slate-800 py-2 pl-9 pr-4 text-sm text-white placeholder-slate-500 focus:border-orange-500 focus:outline-none" />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
@@ -106,11 +106,11 @@ export function CobrosPage() {
                 onClick={() => { setSelected(f); reset({ controlmaestro: f.CONTROLMAESTRO, instrumento: instrumentos?.[0]?.CODINSTRUMENTO ?? '', monto: Number(f.MONTOSAL) }) }}
                 className={`w-full rounded-lg border p-4 text-left transition-colors
                   ${selected?.CONTROLMAESTRO === f.CONTROLMAESTRO
-                    ? 'border-blue-600 bg-blue-900/20'
+                    ? 'border-orange-600 bg-orange-900/20'
                     : 'border-slate-700 bg-slate-900 hover:border-slate-600'}`}
               >
                 <div className="flex items-center justify-between mb-1">
-                  <span className="font-mono text-blue-400 text-sm">{f.NROFAC}</span>
+                  <span className="font-mono text-orange-400 text-sm">{f.NROFAC}</span>
                   <Badge color="yellow">Saldo: ${Number(f.MONTOSAL).toFixed(2)}</Badge>
                 </div>
                 <p className="text-white text-sm font-medium">{f.NOMCLIENTE}</p>
@@ -148,7 +148,7 @@ export function CobrosPage() {
               <div>
                 <label className="mb-1 block text-xs text-slate-400">Instrumento de pago *</label>
                 <select {...register('instrumento')}
-                  className="w-full rounded-lg border border-slate-700 bg-slate-800 py-2 px-3 text-sm text-white focus:border-blue-500 focus:outline-none">
+                  className="w-full rounded-lg border border-slate-700 bg-slate-800 py-2 px-3 text-sm text-white focus:border-orange-500 focus:outline-none">
                   {instrumentos?.map(ins => (
                     <option key={ins.CODINSTRUMENTO} value={ins.CODINSTRUMENTO}>{ins.DESCRINSTRUMENTO}</option>
                   ))}
@@ -160,14 +160,14 @@ export function CobrosPage() {
                 <label className="mb-1 block text-xs text-slate-400">Monto *</label>
                 <input type="number" step="0.01" max={Number(selected.MONTOSAL)}
                   {...register('monto', { valueAsNumber: true })}
-                  className="w-full rounded-lg border border-slate-700 bg-slate-800 py-2 px-3 text-sm text-white focus:border-blue-500 focus:outline-none" />
+                  className="w-full rounded-lg border border-slate-700 bg-slate-800 py-2 px-3 text-sm text-white focus:border-orange-500 focus:outline-none" />
                 {errors.monto && <p className="mt-1 text-xs text-red-400">{errors.monto.message}</p>}
               </div>
 
               <div>
                 <label className="mb-1 block text-xs text-slate-400">Referencia</label>
                 <input type="text" {...register('referencia')} placeholder="N° cheque, transferencia…"
-                  className="w-full rounded-lg border border-slate-700 bg-slate-800 py-2 px-3 text-sm text-white focus:border-blue-500 focus:outline-none" />
+                  className="w-full rounded-lg border border-slate-700 bg-slate-800 py-2 px-3 text-sm text-white focus:border-orange-500 focus:outline-none" />
               </div>
 
               <div className="flex items-start gap-2 rounded-lg bg-yellow-900/20 border border-yellow-800/40 p-3">

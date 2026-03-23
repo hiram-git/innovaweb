@@ -157,7 +157,7 @@ export function FacturasPage() {
         </div>
         <Link
           to="/facturas/nueva"
-          className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500 transition-colors"
+          className="flex items-center gap-2 rounded-lg bg-orange-600 px-4 py-2 text-sm font-medium text-white hover:bg-orange-500 transition-colors"
         >
           <Plus className="h-4 w-4" />
           Nueva Factura
@@ -172,7 +172,7 @@ export function FacturasPage() {
           placeholder="Buscar por número, cliente, RUC…"
           value={search}
           onChange={e => { setSearch(e.target.value); setPage(1) }}
-          className="w-full rounded-lg border border-slate-700 bg-slate-800 py-2 pl-9 pr-4 text-sm text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none"
+          className="w-full rounded-lg border border-slate-700 bg-slate-800 py-2 pl-9 pr-4 text-sm text-white placeholder-slate-500 focus:border-orange-500 focus:outline-none"
         />
       </div>
 
@@ -221,7 +221,7 @@ export function FacturasPage() {
 
                   return (
                     <tr key={rowId} className="bg-slate-900 hover:bg-slate-800 transition-colors">
-                      <td className="px-4 py-3 font-mono text-blue-400">{f.NROFAC}</td>
+                      <td className="px-4 py-3 font-mono text-orange-400">{f.NROFAC}</td>
                       <td className="px-4 py-3 text-white max-w-[200px] truncate">{f.NOMCLIENTE}</td>
                       <td className="px-4 py-3 text-slate-400">
                         {f.FECHA ? new Date(f.FECHA).toLocaleDateString('es-PA') : '—'}
@@ -244,7 +244,7 @@ export function FacturasPage() {
                           ${fe.color === 'green'  ? 'bg-green-900/40 text-green-400'   :
                             fe.color === 'red'    ? 'bg-red-900/40 text-red-400'       :
                             fe.color === 'yellow' ? 'bg-yellow-900/40 text-yellow-400' :
-                            fe.color === 'blue'   ? 'bg-blue-900/40 text-blue-400'     :
+                            fe.color === 'blue'   ? 'bg-orange-900/40 text-orange-400'     :
                                                     'bg-slate-800 text-slate-400'}`}>
                           {fe.icon}
                           {fe.label}

@@ -37,7 +37,7 @@ export function InventarioPage() {
             value={q}
             onChange={e => setQ(e.target.value)}
             placeholder="Buscar por código o descripción..."
-            className="w-full rounded-lg border border-slate-600 bg-slate-800 pl-10 pr-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full rounded-lg border border-slate-600 bg-slate-800 pl-10 pr-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-orange-500"
           />
         </div>
         <Button type="submit" variant="secondary">Buscar</Button>
@@ -58,7 +58,7 @@ export function InventarioPage() {
             <tbody className="divide-y divide-slate-700/50">
               {data?.map((p) => (
                 <tr key={p.CODPRO} className="hover:bg-slate-800/30 transition-colors">
-                  <td className="px-4 py-3 font-mono text-blue-400 text-xs">{p.CODPRO}</td>
+                  <td className="px-4 py-3 font-mono text-orange-400 text-xs">{p.CODPRO}</td>
                   <td className="px-4 py-3 text-white max-w-[200px] truncate">{p.DESCRIP1}</td>
                   <td className="px-4 py-3 text-right font-medium text-white">B/. {Number(p.PRECVEN1).toFixed(2)}</td>
                   <td className="px-4 py-3 text-right">

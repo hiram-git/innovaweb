@@ -90,7 +90,7 @@ export function ConfiguracionPage() {
               <div key={field}>
                 <label className="mb-1 block text-xs text-slate-400">{label}</label>
                 <input {...empresaForm.register(field)}
-                  className="w-full rounded-lg border border-slate-700 bg-slate-800 py-2 px-3 text-sm text-white focus:border-blue-500 focus:outline-none" />
+                  className="w-full rounded-lg border border-slate-700 bg-slate-800 py-2 px-3 text-sm text-white focus:border-orange-500 focus:outline-none" />
               </div>
             ))}
             <div className="flex justify-end">
@@ -112,7 +112,7 @@ export function ConfiguracionPage() {
             <div>
               <label className="mb-1 block text-xs text-slate-400">Ambiente</label>
               <select {...feForm.register('ambiente')}
-                className="w-full rounded-lg border border-slate-700 bg-slate-800 py-2 px-3 text-sm text-white focus:border-blue-500 focus:outline-none">
+                className="w-full rounded-lg border border-slate-700 bg-slate-800 py-2 px-3 text-sm text-white focus:border-orange-500 focus:outline-none">
                 <option value="sandbox">Pruebas (Sandbox)</option>
                 <option value="produccion">Producción</option>
               </select>
@@ -121,7 +121,7 @@ export function ConfiguracionPage() {
             <div>
               <label className="mb-1 block text-xs text-slate-400">Proveedor PAC</label>
               <select {...feForm.register('pac')}
-                className="w-full rounded-lg border border-slate-700 bg-slate-800 py-2 px-3 text-sm text-white focus:border-blue-500 focus:outline-none">
+                className="w-full rounded-lg border border-slate-700 bg-slate-800 py-2 px-3 text-sm text-white focus:border-orange-500 focus:outline-none">
                 <option value="TFHKA">The Factory HKA</option>
                 <option value="DIGIFACT">Digifact</option>
               </select>
@@ -130,16 +130,16 @@ export function ConfiguracionPage() {
             <div>
               <label className="mb-1 block text-xs text-slate-400">RUC Emisor</label>
               <input {...feForm.register('ruc_emisor')}
-                className="w-full rounded-lg border border-slate-700 bg-slate-800 py-2 px-3 text-sm text-white focus:border-blue-500 focus:outline-none" />
+                className="w-full rounded-lg border border-slate-700 bg-slate-800 py-2 px-3 text-sm text-white focus:border-orange-500 focus:outline-none" />
             </div>
 
             <div>
               <label className="mb-1 block text-xs text-slate-400">DV Emisor</label>
               <input {...feForm.register('dv_emisor')} maxLength={2}
-                className="w-full rounded-lg border border-slate-700 bg-slate-800 py-2 px-3 text-sm text-white focus:border-blue-500 focus:outline-none" />
+                className="w-full rounded-lg border border-slate-700 bg-slate-800 py-2 px-3 text-sm text-white focus:border-orange-500 focus:outline-none" />
             </div>
 
-            <div className="rounded-lg bg-blue-900/20 border border-blue-800/40 p-3 text-xs text-blue-400">
+            <div className="rounded-lg bg-orange-900/20 border border-orange-800/40 p-3 text-xs text-orange-400">
               Las credenciales WSDL/API del PAC se configuran en el archivo <code className="font-mono">.env</code> del servidor.
             </div>
 

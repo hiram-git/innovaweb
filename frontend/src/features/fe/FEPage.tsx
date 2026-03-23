@@ -87,7 +87,7 @@ function NotaModal({ doc, tipo, onClose, onSuccess }: NotaModalProps) {
           <div className="flex items-center justify-between px-5 py-4 border-b border-slate-700">
             <div className="flex items-center gap-2">
               {tipo === 'credito'
-                ? <FileMinus className="h-5 w-5 text-blue-400" />
+                ? <FileMinus className="h-5 w-5 text-orange-400" />
                 : <FileX     className="h-5 w-5 text-orange-400" />}
               <h2 className="text-base font-semibold text-white">{label}</h2>
             </div>
@@ -121,7 +121,7 @@ function NotaModal({ doc, tipo, onClose, onSuccess }: NotaModalProps) {
                 onChange={e => setMotivo(e.target.value)}
                 rows={3}
                 placeholder={tipo === 'credito' ? 'Ej: Devolución de mercancía, error en precio…' : 'Ej: Ajuste por diferencia de precio…'}
-                className="w-full rounded-lg border border-slate-600 bg-slate-800 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                className="w-full rounded-lg border border-slate-600 bg-slate-800 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-orange-500 resize-none"
               />
             </div>
 
@@ -233,7 +233,7 @@ export function FEPage() {
       )}
 
       <div className="flex items-center gap-3">
-        <Zap className="h-6 w-6 text-blue-400" />
+        <Zap className="h-6 w-6 text-orange-400" />
         <div>
           <h1 className="text-xl font-bold text-white">Facturación Electrónica / DGI</h1>
           <p className="text-sm text-slate-400">Gestión de documentos electrónicos TFHKA</p>
@@ -244,7 +244,7 @@ export function FEPage() {
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[
           { label: 'Pendientes', value: stats?.pendientes ?? 0, color: 'text-yellow-400', icon: <Clock className="h-5 w-5" /> },
-          { label: 'Enviados',   value: stats?.enviados   ?? 0, color: 'text-blue-400',   icon: <Send  className="h-5 w-5" /> },
+          { label: 'Enviados',   value: stats?.enviados   ?? 0, color: 'text-orange-400',   icon: <Send  className="h-5 w-5" /> },
           { label: 'Aceptados',  value: stats?.aceptados  ?? 0, color: 'text-green-400',  icon: <CheckCircle className="h-5 w-5" /> },
           { label: 'Rechazados', value: stats?.rechazados ?? 0, color: 'text-red-400',    icon: <XCircle className="h-5 w-5" /> },
         ].map(s => (
@@ -263,7 +263,7 @@ export function FEPage() {
         {['', 'PENDIENTE', 'ENVIADO', 'ACEPTADO', 'RECHAZADO'].map(f => (
           <button key={f} onClick={() => setFilter(f)}
             className={`rounded-full px-3 py-1 text-xs font-medium transition-colors
-              ${filter === f ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}`}>
+              ${filter === f ? 'bg-orange-600 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}`}>
             {f || 'Todos'}
           </button>
         ))}
@@ -294,7 +294,7 @@ export function FEPage() {
             <tbody className="divide-y divide-slate-800">
               {docs.map(doc => (
                 <tr key={doc.CONTROLMAESTRO} className="bg-slate-900 hover:bg-slate-800">
-                  <td className="px-4 py-3 font-mono text-blue-400">{doc.NROFAC}</td>
+                  <td className="px-4 py-3 font-mono text-orange-400">{doc.NROFAC}</td>
                   <td className="px-4 py-3 text-white max-w-[160px] truncate">{doc.NOMCLIENTE}</td>
                   <td className="px-4 py-3 text-slate-400">
                     {doc.FECHA ? new Date(doc.FECHA).toLocaleDateString('es-PA') : '—'}
@@ -337,7 +337,7 @@ export function FEPage() {
                           <button
                             onClick={() => setNotaModal({ doc, tipo: 'credito' })}
                             title="Emitir Nota de Crédito"
-                            className="flex items-center gap-1 rounded px-2 py-1 text-xs text-blue-400 border border-blue-800 hover:bg-blue-900/30 transition-colors"
+                            className="flex items-center gap-1 rounded px-2 py-1 text-xs text-orange-400 border border-orange-800 hover:bg-orange-900/30 transition-colors"
                           >
                             <FileMinus className="h-3.5 w-3.5" /> N/C
                           </button>

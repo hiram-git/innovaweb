@@ -43,7 +43,7 @@ function ClienteSearch({ onSelect, value }: { onSelect: (c: Cliente) => void; va
       <input type="text" placeholder="Buscar cliente…" value={q}
         onChange={e => { setQ(e.target.value); setOpen(true) }}
         onFocus={() => setOpen(true)}
-        className="w-full rounded-lg border border-slate-700 bg-slate-800 py-2 pl-9 pr-4 text-sm text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none" />
+        className="w-full rounded-lg border border-slate-700 bg-slate-800 py-2 pl-9 pr-4 text-sm text-white placeholder-slate-500 focus:border-orange-500 focus:outline-none" />
       {open && data && data.length > 0 && (
         <ul className="absolute z-20 mt-1 w-full rounded-lg border border-slate-700 bg-slate-900 shadow-xl max-h-48 overflow-y-auto">
           {data.map(c => (
@@ -140,13 +140,13 @@ export function OTPage() {
               <div>
                 <label className="mb-1 block text-xs text-slate-400">Atendido por *</label>
                 <input {...register('atendido')}
-                  className="w-full rounded-lg border border-slate-700 bg-slate-800 py-2 px-3 text-sm text-white focus:border-blue-500 focus:outline-none" />
+                  className="w-full rounded-lg border border-slate-700 bg-slate-800 py-2 px-3 text-sm text-white focus:border-orange-500 focus:outline-none" />
                 {errors.atendido && <p className="mt-1 text-xs text-red-400">{errors.atendido.message}</p>}
               </div>
               <div>
                 <label className="mb-1 block text-xs text-slate-400">Fecha entrega *</label>
                 <input type="date" {...register('fecha_entrega')}
-                  className="w-full rounded-lg border border-slate-700 bg-slate-800 py-2 px-3 text-sm text-white focus:border-blue-500 focus:outline-none" />
+                  className="w-full rounded-lg border border-slate-700 bg-slate-800 py-2 px-3 text-sm text-white focus:border-orange-500 focus:outline-none" />
                 {errors.fecha_entrega && <p className="mt-1 text-xs text-red-400">{errors.fecha_entrega.message}</p>}
               </div>
             </div>
@@ -154,7 +154,7 @@ export function OTPage() {
             <div>
               <label className="mb-1 block text-xs text-slate-400">Descripción del trabajo *</label>
               <textarea rows={3} {...register('descripcion')}
-                className="w-full rounded-lg border border-slate-700 bg-slate-800 py-2 px-3 text-sm text-white focus:border-blue-500 focus:outline-none resize-none" />
+                className="w-full rounded-lg border border-slate-700 bg-slate-800 py-2 px-3 text-sm text-white focus:border-orange-500 focus:outline-none resize-none" />
               {errors.descripcion && <p className="mt-1 text-xs text-red-400">{errors.descripcion.message}</p>}
             </div>
 
@@ -171,7 +171,7 @@ export function OTPage() {
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
         <input type="text" placeholder="Buscar por número o cliente…" value={search}
           onChange={e => setSearch(e.target.value)}
-          className="w-full rounded-lg border border-slate-700 bg-slate-800 py-2 pl-9 pr-4 text-sm text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none" />
+          className="w-full rounded-lg border border-slate-700 bg-slate-800 py-2 pl-9 pr-4 text-sm text-white placeholder-slate-500 focus:border-orange-500 focus:outline-none" />
       </div>
 
       {/* Lista */}
@@ -193,7 +193,7 @@ export function OTPage() {
                 </div>
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-mono text-blue-400 text-sm">{ot.CONTROLOT}</span>
+                    <span className="font-mono text-orange-400 text-sm">{ot.CONTROLOT}</span>
                     {estadoBadge(ot.ESTADO ?? 0)}
                   </div>
                   <p className="text-white font-medium mt-0.5 truncate">{ot.NOMCLIENTE}</p>
