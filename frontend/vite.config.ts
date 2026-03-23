@@ -54,7 +54,7 @@ export default defineConfig({
         name: 'InnovaWeb — Facturación Electrónica',
         short_name: 'InnovaWeb',
         description: 'Sistema de Facturación Electrónica para Panamá',
-        theme_color: '#1e40af',
+        theme_color: '#f96332',
         background_color: '#0f172a',
         display: 'standalone',
         start_url: '/',

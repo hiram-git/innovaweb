@@ -100,7 +100,7 @@ function NuevoClientePanel({ onClose }: NuevoClientePanelProps) {
             </label>
             <select
               {...register('tipocli')}
-              className="w-full rounded-lg border border-slate-600 bg-slate-800 px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full rounded-lg border border-slate-600 bg-slate-800 px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-orange-500"
             >
               <option value="">Seleccionar…</option>
               <option value="Contribuyente">Contribuyente</option>
@@ -215,7 +215,7 @@ export function ClientesPage() {
             value={q}
             onChange={e => setQ(e.target.value)}
             placeholder="Buscar por nombre, RUC o código..."
-            className="w-full rounded-lg border border-slate-600 bg-slate-800 pl-10 pr-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full rounded-lg border border-slate-600 bg-slate-800 pl-10 pr-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-orange-500"
           />
         </div>
         <Button type="submit" variant="secondary" size="md">Buscar</Button>

@@ -76,7 +76,7 @@ function ClienteSelector({ onSelect }: { onSelect: (c: Cliente) => void }) {
           value={q}
           onChange={e => { setQ(e.target.value); setOpen(true) }}
           onFocus={() => setOpen(true)}
-          className="w-full rounded-lg border border-slate-700 bg-slate-800 py-2 pl-9 pr-4 text-sm text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none"
+          className="w-full rounded-lg border border-slate-700 bg-slate-800 py-2 pl-9 pr-4 text-sm text-white placeholder-slate-500 focus:border-orange-500 focus:outline-none"
         />
         {!isOnline && (
           <WifiOff className="absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-yellow-500" />
@@ -166,7 +166,7 @@ function AgregarItemForm({ onAdd }: { onAdd: (i: ItemFactura) => void }) {
             value={q}
             onChange={e => { setQ(e.target.value); setOpen(true) }}
             onFocus={() => setOpen(true)}
-            className="w-full rounded-lg border border-slate-700 bg-slate-800 py-2 pl-9 pr-4 text-sm text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none"
+            className="w-full rounded-lg border border-slate-700 bg-slate-800 py-2 pl-9 pr-4 text-sm text-white placeholder-slate-500 focus:border-orange-500 focus:outline-none"
           />
         </div>
         {open && productos && productos.length > 0 && (
@@ -189,23 +189,23 @@ function AgregarItemForm({ onAdd }: { onAdd: (i: ItemFactura) => void }) {
         <div>
           <label className="mb-1 block text-xs text-slate-400">Cantidad</label>
           <input type="number" step="0.001" {...register('cantidad', { valueAsNumber: true })}
-            className="w-full rounded-lg border border-slate-700 bg-slate-800 py-2 px-3 text-sm text-white focus:border-blue-500 focus:outline-none" />
+            className="w-full rounded-lg border border-slate-700 bg-slate-800 py-2 px-3 text-sm text-white focus:border-orange-500 focus:outline-none" />
           {errors.cantidad && <p className="mt-1 text-xs text-red-400">{errors.cantidad.message}</p>}
         </div>
         <div>
           <label className="mb-1 block text-xs text-slate-400">Precio</label>
           <input type="number" step="0.01" {...register('precio', { valueAsNumber: true })}
-            className="w-full rounded-lg border border-slate-700 bg-slate-800 py-2 px-3 text-sm text-white focus:border-blue-500 focus:outline-none" />
+            className="w-full rounded-lg border border-slate-700 bg-slate-800 py-2 px-3 text-sm text-white focus:border-orange-500 focus:outline-none" />
         </div>
         <div>
           <label className="mb-1 block text-xs text-slate-400">Descuento $</label>
           <input type="number" step="0.01" {...register('descuento', { valueAsNumber: true })}
-            className="w-full rounded-lg border border-slate-700 bg-slate-800 py-2 px-3 text-sm text-white focus:border-blue-500 focus:outline-none" />
+            className="w-full rounded-lg border border-slate-700 bg-slate-800 py-2 px-3 text-sm text-white focus:border-orange-500 focus:outline-none" />
         </div>
         <div>
           <label className="mb-1 block text-xs text-slate-400">ITBMS %</label>
           <select {...register('imppor', { valueAsNumber: true })}
-            className="w-full rounded-lg border border-slate-700 bg-slate-800 py-2 px-3 text-sm text-white focus:border-blue-500 focus:outline-none">
+            className="w-full rounded-lg border border-slate-700 bg-slate-800 py-2 px-3 text-sm text-white focus:border-orange-500 focus:outline-none">
             {ITBMS_RATES.map(r => <option key={r} value={r}>{r}%</option>)}
           </select>
         </div>
@@ -253,7 +253,7 @@ function FormasPagoSection({
       <div className="flex items-center justify-between">
         <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Formas de pago</p>
         <button type="button" onClick={add}
-          className="flex items-center gap-1 text-xs text-blue-400 hover:text-blue-300">
+          className="flex items-center gap-1 text-xs text-orange-400 hover:text-orange-300">
           <Plus className="h-3.5 w-3.5" /> Agregar
         </button>
       </div>
@@ -270,7 +270,7 @@ function FormasPagoSection({
                   const inst = instrumentos?.find(ins => ins.CODINSTRUMENTO === e.target.value)
                   update(i, { instrumento: e.target.value, descripcion: inst?.DESCRINSTRUMENTO ?? '' })
                 }}
-                className="flex-1 rounded-lg border border-slate-700 bg-slate-800 py-1.5 px-2 text-sm text-white focus:border-blue-500 focus:outline-none"
+                className="flex-1 rounded-lg border border-slate-700 bg-slate-800 py-1.5 px-2 text-sm text-white focus:border-orange-500 focus:outline-none"
               >
                 {instrumentos?.map(ins => (
                   <option key={ins.CODINSTRUMENTO} value={ins.CODINSTRUMENTO}>{ins.DESCRINSTRUMENTO}</option>
@@ -279,11 +279,11 @@ function FormasPagoSection({
               <input type="number" step="0.01" value={fp.monto || ''}
                 onChange={e => update(i, { monto: parseFloat(e.target.value) || 0 })}
                 placeholder="Monto"
-                className="w-28 rounded-lg border border-slate-700 bg-slate-800 py-1.5 px-2 text-sm text-white focus:border-blue-500 focus:outline-none" />
+                className="w-28 rounded-lg border border-slate-700 bg-slate-800 py-1.5 px-2 text-sm text-white focus:border-orange-500 focus:outline-none" />
               <input type="text" value={fp.referencia || ''}
                 onChange={e => update(i, { referencia: e.target.value })}
                 placeholder="Ref."
-                className="w-24 rounded-lg border border-slate-700 bg-slate-800 py-1.5 px-2 text-sm text-white focus:border-blue-500 focus:outline-none" />
+                className="w-24 rounded-lg border border-slate-700 bg-slate-800 py-1.5 px-2 text-sm text-white focus:border-orange-500 focus:outline-none" />
               <button type="button" onClick={() => remove(i)} className="text-red-400 hover:text-red-300 p-1">
                 <Trash2 className="h-4 w-4" />
               </button>
@@ -444,7 +444,7 @@ export function NuevaFacturaPage() {
             <select
               value={tipoFactura}
               onChange={e => setTipoFactura(e.target.value as 'CONTADO' | 'CREDITO')}
-              className="w-full rounded-lg border border-slate-700 bg-slate-800 py-2 px-3 text-sm text-white focus:border-blue-500 focus:outline-none"
+              className="w-full rounded-lg border border-slate-700 bg-slate-800 py-2 px-3 text-sm text-white focus:border-orange-500 focus:outline-none"
             >
               <option value="CONTADO">Contado</option>
               <option value="CREDITO">Crédito</option>
@@ -455,20 +455,20 @@ export function NuevaFacturaPage() {
               <label className="mb-1 block text-xs text-slate-400">Días vencimiento</label>
               <input type="number" min={1} value={diasVencimiento}
                 onChange={e => setDiasVencimiento(Number(e.target.value))}
-                className="w-full rounded-lg border border-slate-700 bg-slate-800 py-2 px-3 text-sm text-white focus:border-blue-500 focus:outline-none" />
+                className="w-full rounded-lg border border-slate-700 bg-slate-800 py-2 px-3 text-sm text-white focus:border-orange-500 focus:outline-none" />
             </div>
           )}
           <div>
             <label className="mb-1 block text-xs text-slate-400">Descuento global $</label>
             <input type="number" step="0.01" min={0} value={descuentoGlobal}
               onChange={e => { setDescuentoGlobal(Number(e.target.value)); calcularTotales() }}
-              className="w-full rounded-lg border border-slate-700 bg-slate-800 py-2 px-3 text-sm text-white focus:border-blue-500 focus:outline-none" />
+              className="w-full rounded-lg border border-slate-700 bg-slate-800 py-2 px-3 text-sm text-white focus:border-orange-500 focus:outline-none" />
           </div>
           <div className="sm:col-span-2">
             <label className="mb-1 block text-xs text-slate-400">Observación</label>
             <input type="text" value={observacion}
               onChange={e => setObservacion(e.target.value)}
-              className="w-full rounded-lg border border-slate-700 bg-slate-800 py-2 px-3 text-sm text-white focus:border-blue-500 focus:outline-none" />
+              className="w-full rounded-lg border border-slate-700 bg-slate-800 py-2 px-3 text-sm text-white focus:border-orange-500 focus:outline-none" />
           </div>
         </div>
       </section>
@@ -504,7 +504,7 @@ export function NuevaFacturaPage() {
                       <td className="py-2 text-right">
                         <input type="number" step="0.001" value={item.cantidad}
                           onChange={e => updateItem(idx, { cantidad: parseFloat(e.target.value) || 0 })}
-                          className="w-16 text-right bg-transparent border-b border-slate-700 text-sm text-white focus:border-blue-500 focus:outline-none" />
+                          className="w-16 text-right bg-transparent border-b border-slate-700 text-sm text-white focus:border-orange-500 focus:outline-none" />
                       </td>
                       <td className="py-2 text-right font-mono">${Number(item.precio).toFixed(2)}</td>
                       <td className="py-2 text-right text-yellow-400">${Number(item.descuento || 0).toFixed(2)}</td>

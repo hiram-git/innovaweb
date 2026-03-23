@@ -20,7 +20,7 @@ interface DashboardStats {
 function feIcon(estado: string | null) {
   switch (estado) {
     case 'ACEPTADO':  return <CheckCircle className="h-3 w-3 text-green-400" />
-    case 'ENVIADO':   return <Send        className="h-3 w-3 text-blue-400"  />
+    case 'ENVIADO':   return <Send        className="h-3 w-3 text-orange-400"  />
     case 'PENDIENTE': return <Clock       className="h-3 w-3 text-yellow-400"/>
     default:          return <FileText    className="h-3 w-3 text-slate-500" />
   }
@@ -46,8 +46,8 @@ export function Dashboard() {
       {/* KPI Cards */}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <Card className="flex flex-col gap-2">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-900/50">
-            <FileText className="h-5 w-5 text-blue-400" />
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-orange-900/50">
+            <FileText className="h-5 w-5 text-orange-400" />
           </div>
           {isLoading ? (
             <div className="h-8 w-16 animate-pulse rounded bg-slate-700" />
@@ -113,7 +113,7 @@ export function Dashboard() {
               >
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
-                    <span className="font-mono text-sm text-blue-400">{f.NROFAC ?? '—'}</span>
+                    <span className="font-mono text-sm text-orange-400">{f.NROFAC ?? '—'}</span>
                     {feIcon(f.FE_ESTADO ?? null)}
                   </div>
                   <p className="truncate text-xs text-slate-400 max-w-[200px]">{f.NOMCLIENTE ?? '—'}</p>
@@ -133,7 +133,7 @@ export function Dashboard() {
         <div className="mt-3 border-t border-slate-700 pt-3">
           <Link
             to="/facturas"
-            className="text-xs text-blue-400 hover:text-blue-300 transition-colors"
+            className="text-xs text-orange-400 hover:text-orange-300 transition-colors"
           >
             Ver todas las facturas →
           </Link>

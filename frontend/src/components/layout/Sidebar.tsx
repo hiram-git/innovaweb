@@ -27,7 +27,7 @@ export function Sidebar() {
     <aside className="flex h-full w-64 flex-col border-r border-slate-700 bg-slate-900">
       {/* Logo */}
       <div className="flex items-center gap-2 border-b border-slate-700 px-4 py-5">
-        <Building2 className="h-7 w-7 text-blue-400" />
+        <Building2 className="h-7 w-7 text-orange-400" />
         <div>
           <p className="text-sm font-bold text-white">InnovaWeb</p>
           <p className="text-xs text-slate-400">Facturación Electrónica</p>
@@ -53,7 +53,7 @@ export function Sidebar() {
             className={({ isActive }) => clsx(
               'flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors',
               isActive
-                ? 'bg-blue-700 text-white font-medium'
+                ? 'bg-orange-700 text-white font-medium'
                 : 'text-slate-400 hover:bg-slate-800 hover:text-slate-100'
             )}
           >
@@ -66,7 +66,7 @@ export function Sidebar() {
       {/* User */}
       <div className="border-t border-slate-700 p-3">
         <div className="flex items-center gap-2 rounded-lg px-2 py-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-700 text-sm font-bold text-white">
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-orange-700 text-sm font-bold text-white">
             {user?.codigo?.[0] ?? '?'}
           </div>
           <div className="flex-1 min-w-0">

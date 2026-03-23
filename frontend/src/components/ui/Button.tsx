@@ -11,7 +11,7 @@ interface Props extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const styles: Record<Variant, string> = {
-  primary:   'bg-blue-600 hover:bg-blue-700 text-white shadow-sm',
+  primary:   'bg-orange-600 hover:bg-orange-700 text-white shadow-sm',
   secondary: 'bg-slate-700 hover:bg-slate-600 text-slate-100',
   ghost:     'hover:bg-slate-800 text-slate-300',
   danger:    'bg-red-600 hover:bg-red-700 text-white',
@@ -30,7 +30,7 @@ export const Button = forwardRef<HTMLButtonElement, Props>(
       className={clsx(
         'inline-flex items-center justify-center gap-2 rounded-lg font-medium',
         'transition-colors focus-visible:outline focus-visible:outline-2',
-        'focus-visible:outline-blue-500 disabled:opacity-50 disabled:cursor-not-allowed',
+        'focus-visible:outline-orange-500 disabled:opacity-50 disabled:cursor-not-allowed',
         styles[variant], sizes[size], className
       )}
       {...props}

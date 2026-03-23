@@ -39,7 +39,7 @@ export function AppLayout() {
         {mobileNav.map(({ to, icon: Icon, label }) => (
           <NavLink key={to} to={to} end={to === '/'} className={({ isActive }) =>
             clsx('flex flex-1 flex-col items-center py-2 text-xs gap-1 transition-colors',
-              isActive ? 'text-blue-400' : 'text-slate-400 hover:text-slate-200')}>
+              isActive ? 'text-orange-400' : 'text-slate-400 hover:text-slate-200')}>
             <Icon className="h-5 w-5"/>
             {label}
           </NavLink>

@@ -79,7 +79,7 @@ export function OfflineQueue() {
             <p className="text-sm font-medium text-white">Cola offline</p>
             {isOnline && pending > 0 && (
               <button onClick={() => void syncAll()} disabled={syncing}
-                className="flex items-center gap-1 text-xs text-blue-400 hover:text-blue-300 disabled:opacity-50">
+                className="flex items-center gap-1 text-xs text-orange-400 hover:text-orange-300 disabled:opacity-50">
                 <RefreshCw className={`h-3.5 w-3.5 ${syncing ? 'animate-spin' : ''}`} />
                 Sincronizar
               </button>
@@ -91,7 +91,7 @@ export function OfflineQueue() {
               <div key={item.id}
                 className={`rounded-lg p-3 text-sm flex items-start justify-between gap-2
                   ${item.estado === 'error' ? 'bg-red-900/20 border border-red-800/40'
-                  : item.estado === 'sincronizando' ? 'bg-blue-900/20 border border-blue-800/40'
+                  : item.estado === 'sincronizando' ? 'bg-orange-900/20 border border-orange-800/40'
                   : 'bg-slate-800 border border-slate-700'}`}>
                 <div className="flex-1 min-w-0">
                   <p className="text-white text-xs font-medium truncate">
@@ -99,7 +99,7 @@ export function OfflineQueue() {
                   </p>
                   <p className={`text-xs mt-0.5 ${
                     item.estado === 'error'         ? 'text-red-400'    :
-                    item.estado === 'sincronizando' ? 'text-blue-400'   :
+                    item.estado === 'sincronizando' ? 'text-orange-400'   :
                                                       'text-slate-400'}`}>
                     {item.estado === 'error'         ? 'Error al sincronizar' :
                      item.estado === 'sincronizando' ? 'Sincronizando…'       :
@@ -120,7 +120,7 @@ export function OfflineQueue() {
                     </button>
                   )}
                   {item.estado === 'sincronizando' && (
-                    <Upload className="h-3.5 w-3.5 text-blue-400 animate-pulse" />
+                    <Upload className="h-3.5 w-3.5 text-orange-400 animate-pulse" />
                   )}
                 </div>
               </div>

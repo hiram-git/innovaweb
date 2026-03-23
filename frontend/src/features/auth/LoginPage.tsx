@@ -47,7 +47,7 @@ export function LoginPage() {
       <div className="w-full max-w-sm">
         {/* Logo */}
         <div className="mb-8 flex flex-col items-center gap-3">
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-700 shadow-lg">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-orange-700 shadow-lg">
             <Building2 className="h-8 w-8 text-white" />
           </div>
           <div className="text-center">
@@ -68,7 +68,7 @@ export function LoginPage() {
                   {...register('usuario')}
                   placeholder="Usuario (ej: ADMIN)"
                   autoComplete="username"
-                  className="w-full rounded-lg border border-slate-600 bg-slate-900 pl-10 pr-3 py-2.5 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full rounded-lg border border-slate-600 bg-slate-900 pl-10 pr-3 py-2.5 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-orange-500"
                 />
                 {errors.usuario && <p className="mt-1 text-xs text-red-400">{errors.usuario.message}</p>}
               </div>
@@ -80,7 +80,7 @@ export function LoginPage() {
                   type="password"
                   placeholder="Contraseña"
                   autoComplete="current-password"
-                  className="w-full rounded-lg border border-slate-600 bg-slate-900 pl-10 pr-3 py-2.5 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full rounded-lg border border-slate-600 bg-slate-900 pl-10 pr-3 py-2.5 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-orange-500"
                 />
                 {errors.password && <p className="mt-1 text-xs text-red-400">{errors.password.message}</p>}
               </div>

@@ -59,9 +59,9 @@ export function InstallPWA() {
 
   return (
     <div className="fixed bottom-20 left-4 right-4 md:left-auto md:right-4 md:w-80 z-50
-                    rounded-xl border border-blue-700 bg-slate-900 shadow-2xl p-4">
+                    rounded-xl border border-orange-700 bg-slate-900 shadow-2xl p-4">
       <div className="flex items-start gap-3">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-700">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-orange-700">
           <Download className="h-5 w-5 text-white" />
         </div>
         <div className="flex-1 min-w-0">
@@ -81,7 +81,7 @@ export function InstallPWA() {
       <div className="mt-3 flex gap-2">
         <button
           onClick={handleInstall}
-          className="flex-1 rounded-lg bg-blue-600 py-2 text-sm font-medium text-white hover:bg-blue-500 transition-colors"
+          className="flex-1 rounded-lg bg-orange-600 py-2 text-sm font-medium text-white hover:bg-orange-500 transition-colors"
         >
           Instalar
         </button>

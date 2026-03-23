@@ -74,7 +74,7 @@ export function PresupuestosPage() {
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
         <input type="text" placeholder="Buscar por número, cliente…" value={search}
           onChange={e => { setSearch(e.target.value); setPage(1) }}
-          className="w-full rounded-lg border border-slate-700 bg-slate-800 py-2 pl-9 pr-4 text-sm text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none" />
+          className="w-full rounded-lg border border-slate-700 bg-slate-800 py-2 pl-9 pr-4 text-sm text-white placeholder-slate-500 focus:border-orange-500 focus:outline-none" />
       </div>
 
       {isLoading ? (
@@ -100,7 +100,7 @@ export function PresupuestosPage() {
                     </div>
                     <div className="min-w-0">
                       <div className="flex items-center gap-2 flex-wrap mb-1">
-                        <span className="font-mono text-blue-400 text-sm">{p.NROFAC}</span>
+                        <span className="font-mono text-orange-400 text-sm">{p.NROFAC}</span>
                         <Badge color={badge.color}>{badge.label}</Badge>
                       </div>
                       <p className="text-white font-medium truncate">{p.NOMCLIENTE}</p>
