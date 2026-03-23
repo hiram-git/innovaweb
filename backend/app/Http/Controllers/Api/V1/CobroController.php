@@ -126,11 +126,12 @@ class CobroController extends Controller
                 "INSERT INTO TRANSACCMAESTRO
                     (CONTROL,TIPREG,TIPTRAN,NUMDOC,CODIGO,NOMBRE,FECEMIS,NUMREF,
                      MONTOTOT,MONTOTAR,MONTOCHE,MONTOINTS1,MONTOEFE)
-                 VALUES (:ctrl,'1','PAGxFAC',:numref,:cod,'',GETDATE(),:nroPago,
+                 VALUES (:ctrl,'1','PAGxFAC',:numref,:cod,'',:fecemis,:nroPago,
                          :total,:tar,:che,:ints1,:efe)",
                 [
                     'ctrl' => $controlCobro, 'numref' => $factura->NUMREF,
-                    'cod' => $factura->CODIGO, 'nroPago' => $nroPago,
+                    'cod' => $factura->CODIGO, 'fecemis' => (int) now('America/Panama')->format('Ymd'),
+                    'nroPago' => $nroPago,
                     'total' => $monto, 'tar' => $montoTar, 'che' => $montoChe,
                     'ints1' => $montoInts1, 'efe' => $montoEfe,
                 ]

@@ -96,11 +96,12 @@ class PresupuestoController extends Controller
                 "INSERT INTO TRANSACCMAESTRO
                     (CONTROL,TIPREG,TIPTRAN,CODIGO,NOMBRE,FECEMIS,NUMREF,
                      MONTOBRU,MONTOIMP,MONTODES,MONTOTOT,TIPOCLI,CODVEN)
-                 VALUES (:ctrl,'1','PRE',:cod,:nom,GETDATE(),:numref,
+                 VALUES (:ctrl,'1','PRE',:cod,:nom,:fecemis,:numref,
                          :bru,:imp,:des,:tot,:tcli,:cven)",
                 [
                     'ctrl' => $control, 'cod' => $codCliente,
                     'nom' => $cliente->NOMBRE, 'numref' => $numref,
+                    'fecemis' => (int) now('America/Panama')->format('Ymd'),
                     'bru' => round($montoBru,2), 'imp' => round($montoImp,2),
                     'des' => round($montoDes,2), 'tot' => round($montoTot,2),
                     'tcli' => $cliente->TIPOCLI ?? '01', 'cven' => $request->user()->erp_coduser ?? '',
@@ -199,17 +200,18 @@ class PresupuestoController extends Controller
             $totalPag  = array_sum(array_column($data['formasPago'], 'monto'));
             $cambio    = max(0, $totalPag - $montoTot);
             $montoSal  = $data['tipoFactura'] === 'CREDITO' ? $montoTot : 0;
-            $fechaVenc = now('America/Panama')->addDays($diasVenc)->format('Y-m-d');
+            $fechaVenc = (int) now('America/Panama')->addDays($diasVenc)->format('Ymd');
 
             DB::statement(
                 "INSERT INTO TRANSACCMAESTRO
                     (CONTROL,TIPREG,TIPTRAN,TIPOFACTURA,CODIGO,NOMBRE,FECEMIS,NUMREF,
                      MONTOBRU,MONTOIMP,MONTODES,MONTOTOT,MONTOSAL,CAMBIO,
                      DIASVEN,FECVENCS,TIPOCLI,CODVEN)
-                 VALUES (:ctrl,'1','FAC',:tipofac,:cod,:nom,GETDATE(),:numref,
+                 VALUES (:ctrl,'1','FAC',:tipofac,:cod,:nom,:fecemis,:numref,
                          :bru,:imp,:des,:tot,:sal,:cambio,:dias,:fvenc,:tcli,:cven)",
                 [
                     'ctrl' => $controlFac, 'tipofac' => $data['tipoFactura'],
+                    'fecemis' => (int) now('America/Panama')->format('Ymd'),
                     'cod' => $pres->CODIGO, 'nom' => $pres->NOMBRE,
                     'numref' => $numref, 'bru' => $pres->MONTOBRU, 'imp' => $pres->MONTOIMP,
                     'des' => $pres->MONTODES, 'tot' => $montoTot, 'sal' => round($montoSal,2),
