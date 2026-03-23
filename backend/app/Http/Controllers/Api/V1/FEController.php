@@ -220,7 +220,7 @@ class FEController extends Controller
                 SUM(CASE WHEN d.RESULTADO = 'RECHAZADO' THEN 1 ELSE 0 END) AS rechazados
              FROM TRANSACCMAESTRO m
              LEFT JOIN Documentos d ON d.CONTROL = m.CONTROL
-             WHERE m.TIPTRAN = 'FAC' AND m.INTEGRADO = 0
+             WHERE m.TIPTRAN = 'FAC'
                AND m.FECEMIS >= DATEADD(month, -3, GETDATE())"
         );
 
@@ -242,7 +242,7 @@ class FEController extends Controller
         $page    = max(1, (int) $request->query('page', 1));
         $offset  = ($page - 1) * $perPage;
 
-        $where  = ["m.TIPTRAN = 'FAC'", "m.INTEGRADO = 0"];
+        $where  = ["m.TIPTRAN = 'FAC'"];
         $params = [];
 
         if ($estado === '') {

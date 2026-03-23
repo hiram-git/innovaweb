@@ -23,7 +23,6 @@ class DashboardController extends Controller
             "SELECT COUNT(*) AS total
              FROM TRANSACCMAESTRO
              WHERE TIPTRAN = 'FAC'
-               AND INTEGRADO = 0
                AND CAST(FECEMIS AS DATE) = CAST(GETDATE() AS DATE)"
         )?->total ?? 0);
 
@@ -32,7 +31,6 @@ class DashboardController extends Controller
             "SELECT ISNULL(SUM(MONTOSAL), 0) AS total
              FROM TRANSACCMAESTRO
              WHERE TIPTRAN = 'FAC'
-               AND INTEGRADO = 0
                AND MONTOSAL > 0"
         )?->total ?? 0);
 
@@ -50,7 +48,6 @@ class DashboardController extends Controller
             "SELECT COUNT(DISTINCT CODIGO) AS total
              FROM TRANSACCMAESTRO
              WHERE TIPTRAN = 'FAC'
-               AND INTEGRADO = 0
                AND FECEMIS >= DATEADD(day, -90, GETDATE())"
         )?->total ?? 0);
 
@@ -68,7 +65,7 @@ class DashboardController extends Controller
                 d.CUFE
              FROM TRANSACCMAESTRO m
              LEFT JOIN Documentos d ON d.CONTROL = m.CONTROL
-             WHERE m.TIPTRAN = 'FAC' AND m.INTEGRADO = 0
+             WHERE m.TIPTRAN = 'FAC'
              ORDER BY m.FECEMIS DESC"
         );
 
