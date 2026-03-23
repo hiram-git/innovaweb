@@ -23,7 +23,7 @@ class DashboardController extends Controller
             "SELECT COUNT(*) AS total
              FROM TRANSACCMAESTRO
              WHERE TIPTRAN = 'FAC'
-               AND CAST(FECEMIS AS DATE) = CAST(GETDATE() AS DATE)"
+               AND FECEMIS = CONVERT(INT, CONVERT(VARCHAR(8), GETDATE(), 112))"
         )?->total ?? 0);
 
         // Total en saldo pendiente de cobro (crédito)
@@ -48,7 +48,7 @@ class DashboardController extends Controller
             "SELECT COUNT(DISTINCT CODIGO) AS total
              FROM TRANSACCMAESTRO
              WHERE TIPTRAN = 'FAC'
-               AND FECEMIS >= DATEADD(day, -90, GETDATE())"
+               AND FECEMIS >= CONVERT(INT, CONVERT(VARCHAR(8), DATEADD(day, -90, GETDATE()), 112))"
         )?->total ?? 0);
 
         // Últimas 10 facturas para la tabla del dashboard

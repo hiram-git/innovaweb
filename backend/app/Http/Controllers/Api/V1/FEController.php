@@ -221,7 +221,7 @@ class FEController extends Controller
              FROM TRANSACCMAESTRO m
              LEFT JOIN Documentos d ON d.CONTROL = m.CONTROL
              WHERE m.TIPTRAN = 'FAC'
-               AND m.FECEMIS >= DATEADD(month, -3, GETDATE())"
+               AND m.FECEMIS >= CONVERT(INT, CONVERT(VARCHAR(8), DATEADD(month, -3, GETDATE()), 112))"
         );
 
         return response()->json([

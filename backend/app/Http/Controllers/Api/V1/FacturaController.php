@@ -173,17 +173,18 @@ class FacturaController extends Controller
                      FECEMIS,NUMREF,MONTOBRU,MONTOIMP,MONTODES,MONTOTOT,
                      MONTOSAL,CAMBIO,DIASVEN,FECVENCS,TIPOCLI,CODVEN)
                  VALUES (:ctrl,'1','FAC',:tipofac,:codigo,:nombre,:direcc,
-                     GETDATE(),:numref,:montobru,:montoimp,:montodes,:montotot,
+                     :fecemis,:numref,:montobru,:montoimp,:montodes,:montotot,
                      :montosal,:cambio,:diasven,:fecvencs,:tipocli,:codven)",
                 [
                     'ctrl' => $controlMaestro, 'tipofac' => $tipoFactura,
                     'codigo' => $codCliente, 'nombre' => $cliente->NOMBRE,
                     'direcc' => $cliente->DIRECC1 ?? '', 'numref' => $numref,
+                    'fecemis' => (int) now('America/Panama')->format('Ymd'),
                     'montobru' => round($montoBru, 2), 'montoimp' => round($montoImp, 2),
                     'montodes' => round($montoDes, 2), 'montotot' => $montoTot,
                     'montosal' => round($montoSal, 2), 'cambio' => $cambio,
                     'diasven' => $diasVenc,
-                    'fecvencs' => now('America/Panama')->addDays($diasVenc)->format('Y-m-d'),
+                    'fecvencs' => (int) now('America/Panama')->addDays($diasVenc)->format('Ymd'),
                     'tipocli' => $cliente->TIPOCLI ?? '01',
                     'codven' => $request->user()->erp_coduser ?? '',
                 ]
@@ -278,7 +279,7 @@ class FacturaController extends Controller
         if (isset($data['diasVencimiento'])) {
             DB::statement("UPDATE TRANSACCMAESTRO SET DIASVEN=:d, FECVENCS=:f WHERE CONTROL=:c", [
                 'd' => $data['diasVencimiento'],
-                'f' => now('America/Panama')->addDays($data['diasVencimiento'])->format('Y-m-d'),
+                'f' => (int) now('America/Panama')->addDays($data['diasVencimiento'])->format('Ymd'),
                 'c' => $control,
             ]);
         }
