@@ -23,7 +23,6 @@ class InstrumentosController extends Controller
         $instrumentos = DB::select(
             "SELECT CODINSTRUMENTO, DESCRINSTRUMENTO, FUNCION
              FROM BASEINSTRUMENTOS
-             WHERE INTEGRADO = 0
              ORDER BY FUNCION ASC, DESCRINSTRUMENTO ASC"
         );
 
