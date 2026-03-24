@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useLocation } from 'react-router-dom'
 import { useQuery, useMutation } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -30,7 +31,10 @@ const cobroSchema = z.object({
 type CobroForm = z.infer<typeof cobroSchema>
 
 export function CobrosPage() {
-  const [search, setSearch]   = useState('')
+  const location = useLocation()
+  const clienteNav = (location.state as { cliente?: { NOMBRE?: string; CODIGO?: string } } | null)?.cliente
+
+  const [search, setSearch]   = useState(clienteNav?.NOMBRE ?? '')
   const [selected, setSelected] = useState<FacturaMaestro | null>(null)
   const [toast, setToast]     = useState<{ type: 'success' | 'error'; message: string } | null>(null)
 
@@ -82,6 +86,14 @@ export function CobrosPage() {
         <h1 className="text-xl font-bold text-white">Cobros</h1>
         <p className="text-sm text-slate-400">Facturas a crédito con saldo pendiente</p>
       </div>
+
+      {clienteNav && (
+        <div className="flex items-center gap-2 rounded-lg bg-orange-900/20 border border-orange-800/40 px-3 py-2 text-sm text-orange-300">
+          <span className="font-medium">Cliente:</span>
+          <span className="truncate">{clienteNav.NOMBRE}</span>
+          {clienteNav.CODIGO && <span className="font-mono text-xs text-orange-400/70">{clienteNav.CODIGO}</span>}
+        </div>
+      )}
 
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />

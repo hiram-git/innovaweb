@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useLocation } from 'react-router-dom'
 import { useQuery, useMutation } from '@tanstack/react-query'
 import { ClipboardList, Search, ArrowRightLeft, CheckCircle, Clock, XCircle } from 'lucide-react'
 import { api } from '@/lib/axios'
@@ -19,7 +20,10 @@ function integraBadge(integrado: number | null): { label: string; color: BadgeCo
 }
 
 export function PresupuestosPage() {
-  const [search, setSearch]   = useState('')
+  const location = useLocation()
+  const clienteNav = (location.state as { cliente?: { NOMBRE?: string; CODIGO?: string } } | null)?.cliente
+
+  const [search, setSearch]   = useState(clienteNav?.NOMBRE ?? '')
   const [page, setPage]       = useState(1)
   const [toast, setToast]     = useState<{ type: 'success' | 'error'; message: string } | null>(null)
   const [converting, setConverting] = useState<string | null>(null)
@@ -69,6 +73,14 @@ export function PresupuestosPage() {
           <p className="text-sm text-slate-400">{total} registros</p>
         </div>
       </div>
+
+      {clienteNav && (
+        <div className="flex items-center gap-2 rounded-lg bg-orange-900/20 border border-orange-800/40 px-3 py-2 text-sm text-orange-300">
+          <span className="font-medium">Cliente:</span>
+          <span className="truncate">{clienteNav.NOMBRE}</span>
+          {clienteNav.CODIGO && <span className="font-mono text-xs text-orange-400/70">{clienteNav.CODIGO}</span>}
+        </div>
+      )}
 
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
