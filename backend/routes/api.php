@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\V1\FEController;
 use App\Http\Controllers\Api\V1\OrdenTrabajoController;
 use App\Http\Controllers\Api\V1\CobroController;
 use App\Http\Controllers\Api\V1\PresupuestoController;
+use App\Http\Controllers\Api\V1\PedidoController;
 use App\Http\Controllers\Api\V1\InstrumentosController;
 use App\Http\Controllers\Api\V1\ConfiguracionController;
 use App\Http\Controllers\Api\V1\DashboardController;
@@ -94,9 +95,13 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'throttle:api'])->group(functio
 
     // ── Presupuestos / Cotizaciones ──────────────────────────────────────────
     Route::apiResource('presupuestos', PresupuestoController::class);
-    // Nota: ruta alineada con el frontend (/convertir-a-factura)
     Route::post('presupuestos/{id}/convertir-a-factura', [PresupuestoController::class, 'convertirAFactura'])
         ->name('presupuestos.convertir');
+
+    // ── Pedidos (reserva inventario, TIPTRAN='PEDxCLI') ─────────────────────
+    Route::apiResource('pedidos', PedidoController::class)->only(['index', 'show', 'store', 'destroy']);
+    Route::post('pedidos/{id}/convertir-a-factura', [PedidoController::class, 'convertirAFactura'])
+        ->name('pedidos.convertir');
 
     // ── Configuración ────────────────────────────────────────────────────────
     Route::get('configuracion/empresa',  [ConfiguracionController::class, 'getEmpresa'])->name('config.empresa.get');
