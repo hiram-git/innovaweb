@@ -38,6 +38,10 @@ export interface Cliente {
   DIASCRE:       number | null
   CONESPECIAL:   number | null
   PORRETIMP:     number | null
+  PERCREDITO:    number | null   // 0=no credit, 1=credit with limit
+  LIMITECRE:     number | null   // credit limit amount
+  PORMAXDESGLO:  number | null   // max global discount %
+  PORMAXDESPAR:  number | null   // max per-item discount %
   provincia:     string | null
   distrito:      string | null
   corregimiento: string | null
