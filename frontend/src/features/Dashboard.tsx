@@ -1,11 +1,17 @@
 import { useQuery } from '@tanstack/react-query'
-import { FileText, Users, DollarSign, Zap, CheckCircle, Send, Clock } from 'lucide-react'
+import { FileText, Users, DollarSign, Zap, Plus } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { Card } from '@/components/ui/Card'
-import { Badge } from '@/components/ui/Badge'
 import { Spinner } from '@/components/ui/Spinner'
 import api from '@/lib/axios'
-import type { FacturaMaestro } from '@/types'
+import { useAuthStore } from '@/stores/authStore'
+
+interface TopCliente {
+  CODIGO: string
+  NOMBRE: string
+  total_facturas: number
+  monto_total: number
+}
 
 interface DashboardStats {
   kpis: {
@@ -14,27 +20,48 @@ interface DashboardStats {
     fe_aceptadas_mes: number
     clientes_activos: number
   }
-  ultimas_facturas: FacturaMaestro[]
+  top_clientes: TopCliente[]
 }
 
-function feIcon(estado: string | null) {
-  switch (estado) {
-    case 'ACEPTADO':  return <CheckCircle className="h-3 w-3 text-green-400" />
-    case 'ENVIADO':   return <Send        className="h-3 w-3 text-orange-400"  />
-    case 'PENDIENTE': return <Clock       className="h-3 w-3 text-yellow-400"/>
-    default:          return <FileText    className="h-3 w-3 text-slate-500" />
-  }
-}
+const shortcuts = [
+  {
+    to: '/facturas/nueva',
+    label: 'Nueva Factura',
+    icon: FileText,
+    color: 'bg-orange-700 hover:bg-orange-600',
+    permiso: 'ver_factura' as const,
+  },
+  {
+    to: '/cobros',
+    label: 'Nuevo Cobro',
+    icon: DollarSign,
+    color: 'bg-green-700 hover:bg-green-600',
+    permiso: 'ver_cobro' as const,
+  },
+  {
+    to: '/clientes',
+    label: 'Nuevo Cliente',
+    icon: Users,
+    color: 'bg-blue-700 hover:bg-blue-600',
+    permiso: null,
+  },
+]
 
 export function Dashboard() {
+  const permisos = useAuthStore(s => s.user?.permisos)
+
   const { data, isLoading, isError } = useQuery<DashboardStats>({
     queryKey: ['dashboard-stats'],
     queryFn: () => api.get<DashboardStats>('/dashboard/stats').then(r => r.data),
-    staleTime: 60_000, // Re-fetch each minute
+    staleTime: 60_000,
   })
 
   const kpis = data?.kpis
-  const facturas = data?.ultimas_facturas ?? []
+  const topClientes = data?.top_clientes ?? []
+
+  const visibleShortcuts = shortcuts.filter(s =>
+    s.permiso === null || !permisos || (permisos[s.permiso] as number) !== 0
+  )
 
   return (
     <div className="space-y-6">
@@ -96,35 +123,54 @@ export function Dashboard() {
         </Card>
       </div>
 
-      {/* Últimas facturas */}
-      <Card title="Últimas facturas">
+      {/* Accesos directos */}
+      {visibleShortcuts.length > 0 && (
+        <div className="grid grid-cols-3 gap-3">
+          {visibleShortcuts.map(({ to, label, icon: Icon, color }) => (
+            <Link
+              key={to}
+              to={to}
+              className={`flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-white transition-colors ${color}`}
+            >
+              <Plus className="h-4 w-4 shrink-0" />
+              <span>{label}</span>
+              <Icon className="ml-auto h-4 w-4 shrink-0 opacity-70" />
+            </Link>
+          ))}
+        </div>
+      )}
+
+      {/* Top 10 clientes por facturas */}
+      <Card title="Clientes con más facturas">
         {isLoading ? (
           <div className="flex justify-center py-8"><Spinner /></div>
         ) : isError ? (
           <p className="py-8 text-center text-sm text-red-400">Error al cargar datos</p>
-        ) : facturas.length === 0 ? (
-          <p className="py-8 text-center text-sm text-slate-500">No hay facturas recientes</p>
+        ) : topClientes.length === 0 ? (
+          <p className="py-8 text-center text-sm text-slate-500">Sin datos disponibles</p>
         ) : (
           <div className="space-y-1.5">
-            {facturas.map((f) => (
+            {topClientes.map((c, idx) => (
               <div
-                key={f.CONTROLMAESTRO}
+                key={c.CODIGO}
                 className="flex items-center justify-between rounded-lg bg-slate-900/50 px-3 py-2.5"
               >
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono text-sm text-orange-400">{f.NROFAC ?? '—'}</span>
-                    {feIcon(f.FE_ESTADO ?? null)}
+                <div className="flex items-center gap-3 min-w-0 flex-1">
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-700 text-xs font-bold text-slate-300">
+                    {idx + 1}
+                  </span>
+                  <div className="min-w-0">
+                    <p className="truncate text-sm text-white">{c.NOMBRE ?? c.CODIGO}</p>
+                    <p className="text-xs text-slate-500">{c.CODIGO}</p>
                   </div>
-                  <p className="truncate text-xs text-slate-400 max-w-[200px]">{f.NOMCLIENTE ?? '—'}</p>
                 </div>
                 <div className="ml-3 shrink-0 text-right">
-                  <p className="text-sm font-semibold text-white">
-                    B/.{Number(f.MONTOTOT ?? 0).toFixed(2)}
+                  <p className="text-sm font-semibold text-orange-400">
+                    {Number(c.total_facturas)} fact.
                   </p>
-                  <Badge color={f.TIPTRAN === 'CONTADO' ? 'blue' : 'yellow'}>
-                    {f.TIPTRAN === 'CONTADO' ? 'Contado' : 'Crédito'}
-                  </Badge>
+                  <p className="text-xs text-slate-400">
+                    B/.{Number(c.monto_total ?? 0).toLocaleString('es-PA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </p>
                 </div>
               </div>
             ))}
@@ -132,10 +178,10 @@ export function Dashboard() {
         )}
         <div className="mt-3 border-t border-slate-700 pt-3">
           <Link
-            to="/facturas"
+            to="/clientes"
             className="text-xs text-orange-400 hover:text-orange-300 transition-colors"
           >
-            Ver todas las facturas →
+            Ver todos los clientes →
           </Link>
         </div>
       </Card>
