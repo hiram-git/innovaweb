@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import { useLocation } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation } from '@tanstack/react-query'
-import { ShoppingCart, Search, ArrowRightLeft, Clock, Trash2 } from 'lucide-react'
+import { ShoppingCart, Search, ArrowRightLeft, Clock, Trash2, Plus } from 'lucide-react'
 import { api } from '@/lib/axios'
 import { queryClient } from '@/lib/queryClient'
 import { Badge } from '@/components/ui/Badge'
@@ -11,7 +11,8 @@ import { Toast } from '@/components/ui/Toast'
 import type { Pedido } from '@/types'
 
 export function PedidosPage() {
-  const location  = useLocation()
+  const location   = useLocation()
+  const navigate   = useNavigate()
   const clienteNav = (location.state as { cliente?: { NOMBRE?: string; CODIGO?: string } } | null)?.cliente
 
   const [search, setSearch]     = useState(clienteNav?.NOMBRE ?? '')
@@ -97,6 +98,9 @@ export function PedidosPage() {
           <h1 className="text-xl font-bold text-white">Pedidos</h1>
           <p className="text-sm text-slate-400">{total} registros · reservan inventario</p>
         </div>
+        <Button onClick={() => navigate('/pedidos/nuevo')}>
+          <Plus className="h-4 w-4 mr-1" />Nuevo
+        </Button>
       </div>
 
       {clienteNav && (

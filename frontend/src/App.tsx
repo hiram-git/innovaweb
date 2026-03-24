@@ -14,6 +14,7 @@ import { OTPage } from '@/features/ordenes-trabajo/OTPage'
 import { CobrosPage } from '@/features/cobros/CobrosPage'
 import { PresupuestosPage } from '@/features/presupuestos/PresupuestosPage'
 import { PedidosPage } from '@/features/pedidos/PedidosPage'
+import { NuevaSolicitudPage } from '@/features/solicitudes/NuevaSolicitudPage'
 import { ConfiguracionPage } from '@/features/configuracion/ConfiguracionPage'
 
 export default function App() {
@@ -33,7 +34,9 @@ export default function App() {
               <Route path="ordenes-trabajo" element={<OTPage />} />
               <Route path="cobros" element={<CobrosPage />} />
               <Route path="presupuestos" element={<PresupuestosPage />} />
+              <Route path="presupuestos/nuevo" element={<NuevaSolicitudPage tipo="presupuesto" />} />
               <Route path="pedidos" element={<PedidosPage />} />
+              <Route path="pedidos/nuevo" element={<NuevaSolicitudPage tipo="pedido" />} />
               <Route path="configuracion" element={<ConfiguracionPage />} />
             </Route>
           </Route>

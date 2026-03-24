@@ -1,10 +1,7 @@
 import { useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useQuery, useMutation } from '@tanstack/react-query'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
-import { Search, Plus, Trash2, ChevronLeft, WifiOff } from 'lucide-react'
+import { useMutation, useQuery } from '@tanstack/react-query'
+import { Plus, Trash2, ChevronLeft, WifiOff, Package } from 'lucide-react'
 import { api } from '@/lib/axios'
 import { useFacturaStore } from '@/stores/facturaStore'
 import { useOnlineStatus } from '@/hooks/useOnlineStatus'
@@ -12,210 +9,16 @@ import { queryClient } from '@/lib/queryClient'
 import { db } from '@/lib/db'
 import { Button } from '@/components/ui/Button'
 import { Toast } from '@/components/ui/Toast'
-import type { Cliente, Produto, ItemFactura, FormaPago, NuevaFacturaPayload } from '@/types'
-
-/* ─── schemas ─── */
-const itemSchema = z.object({
-  codpro:    z.string().min(1, 'Requerido'),
-  descrip:   z.string().min(1),
-  cantidad:  z.number().min(0.001, 'Cantidad > 0'),
-  precio:    z.number().min(0),
-  descuento: z.number().min(0).max(9999),
-  imppor:    z.number().min(0),
-})
-type ItemForm = z.infer<typeof itemSchema>
+import { ClienteSelector } from '@/components/ui/ClienteSelector'
+import { BuscadorProductoModal } from '@/components/ui/BuscadorProductoModal'
+import type { ItemFactura, FormaPago, NuevaFacturaPayload } from '@/types'
 
 /* ─── helpers ─── */
-const ITBMS_RATES = [0, 7, 10, 15]
 
 function calcItem(i: ItemFactura) {
   const base   = i.cantidad * (i.precio - (i.descuento || 0))
   const itbms  = base * (i.imppor / 100)
   return { base, itbms, total: base + itbms }
-}
-
-/* ─── Selector de cliente ─── */
-function ClienteSelector({ onSelect }: { onSelect: (c: Cliente) => void }) {
-  const [q, setQ]       = useState('')
-  const [open, setOpen] = useState(false)
-  const isOnline        = useOnlineStatus()
-
-  const { data } = useQuery({
-    queryKey: ['clientes-search', q],
-    queryFn: async () => {
-      if (isOnline) {
-        const result = await api.get<{ data: Cliente[] }>('/clientes', { params: { q, limit: 8 } })
-          .then(r => r.data.data)
-        // Cache results to Dexie for offline use (bulkPut ignores duplicates)
-        if (result.length > 0) {
-          await db.clientes.bulkPut(result).catch(() => {/* ignore quota errors */})
-        }
-        return result
-      } else {
-        // Offline: search from local IndexedDB cache
-        return db.clientes
-          .filter(c =>
-            (c.NOMBRE ?? '').toLowerCase().includes(q.toLowerCase()) ||
-            (c.RIF    ?? '').toLowerCase().includes(q.toLowerCase()) ||
-            (c.CODIGO ?? '').toLowerCase().includes(q.toLowerCase())
-          )
-          .limit(8)
-          .toArray()
-      }
-    },
-    enabled: q.length >= 2,
-  })
-
-  return (
-    <div className="relative">
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-        <input
-          type="text"
-          placeholder={isOnline ? 'Buscar cliente por nombre o RUC…' : 'Buscar en caché local…'}
-          value={q}
-          onChange={e => { setQ(e.target.value); setOpen(true) }}
-          onFocus={() => setOpen(true)}
-          className="w-full rounded-lg border border-slate-700 bg-slate-800 py-2 pl-9 pr-4 text-sm text-white placeholder-slate-500 focus:border-orange-500 focus:outline-none"
-        />
-        {!isOnline && (
-          <WifiOff className="absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-yellow-500" />
-        )}
-      </div>
-      {open && data && data.length > 0 && (
-        <ul className="absolute z-20 mt-1 w-full rounded-lg border border-slate-700 bg-slate-900 shadow-xl max-h-52 overflow-y-auto">
-          {data.map(c => (
-            <li key={c.CODIGO}>
-              <button
-                type="button"
-                onClick={() => { onSelect(c); setQ(c.NOMBRE ?? ''); setOpen(false) }}
-                className="w-full px-4 py-2.5 text-left text-sm hover:bg-slate-800 text-white"
-              >
-                <span className="font-medium">{c.NOMBRE}</span>
-                <span className="ml-2 text-xs text-slate-400">{c.RIF}</span>
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
-  )
-}
-
-/* ─── Fila de item (agregar) ─── */
-function AgregarItemForm({ onAdd }: { onAdd: (i: ItemFactura) => void }) {
-  const [q, setQ]       = useState('')
-  const [open, setOpen] = useState(false)
-  const isOnline        = useOnlineStatus()
-
-  const { data: productos } = useQuery({
-    queryKey: ['productos-search-item', q],
-    queryFn: async () => {
-      if (isOnline) {
-        const result = await api.get<{ data: Produto[] }>('/inventario', { params: { q, limit: 8 } })
-          .then(r => r.data.data)
-        if (result.length > 0) {
-          await db.productos.bulkPut(result).catch(() => {/* ignore quota errors */})
-        }
-        return result
-      } else {
-        return db.productos
-          .filter(p =>
-            (p.CODPRO   ?? '').toLowerCase().includes(q.toLowerCase()) ||
-            (p.DESCRIP1 ?? '').toLowerCase().includes(q.toLowerCase())
-          )
-          .limit(8)
-          .toArray()
-      }
-    },
-    enabled: q.length >= 2,
-  })
-
-  const { register, handleSubmit, setValue, reset, formState: { errors } } = useForm<ItemForm>({
-    resolver: zodResolver(itemSchema),
-    defaultValues: { cantidad: 1, precio: 0, descuento: 0, imppor: 7 },
-  })
-
-  const selectProducto = (p: Produto) => {
-    setValue('codpro',  p.CODPRO)
-    setValue('descrip', p.DESCRIP1)
-    setValue('precio',  Number(p.PRECVEN1 ?? 0))
-    setValue('imppor',  Number(p.IMPPOR ?? 7))
-    setQ(p.DESCRIP1)
-    setOpen(false)
-  }
-
-  const onSubmit = (data: ItemForm) => {
-    onAdd({ ...data } as ItemFactura)
-    reset({ cantidad: 1, precio: 0, descuento: 0, imppor: 7 })
-    setQ('')
-  }
-
-  return (
-    <form onSubmit={handleSubmit(onSubmit)} className="rounded-lg border border-dashed border-slate-600 bg-slate-800/50 p-4 space-y-3">
-      <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Agregar ítem</p>
-      {/* Producto search */}
-      <div className="relative">
-        <input type="hidden" {...register('codpro')} />
-        <input type="hidden" {...register('descrip')} />
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-          <input
-            type="text"
-            placeholder="Buscar producto…"
-            value={q}
-            onChange={e => { setQ(e.target.value); setOpen(true) }}
-            onFocus={() => setOpen(true)}
-            className="w-full rounded-lg border border-slate-700 bg-slate-800 py-2 pl-9 pr-4 text-sm text-white placeholder-slate-500 focus:border-orange-500 focus:outline-none"
-          />
-        </div>
-        {open && productos && productos.length > 0 && (
-          <ul className="absolute z-20 mt-1 w-full rounded-lg border border-slate-700 bg-slate-900 shadow-xl max-h-48 overflow-y-auto">
-            {productos.map(p => (
-              <li key={p.CODPRO}>
-                <button type="button" onClick={() => selectProducto(p)}
-                  className="w-full px-4 py-2 text-left text-sm hover:bg-slate-800 text-white flex justify-between">
-                  <span>{p.DESCRIP1}</span>
-                  <span className="text-slate-400 font-mono">${Number(p.PRECVEN1).toFixed(2)}</span>
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-        {errors.codpro && <p className="mt-1 text-xs text-red-400">{errors.codpro.message}</p>}
-      </div>
-
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <div>
-          <label className="mb-1 block text-xs text-slate-400">Cantidad</label>
-          <input type="number" step="0.001" {...register('cantidad', { valueAsNumber: true })}
-            className="w-full rounded-lg border border-slate-700 bg-slate-800 py-2 px-3 text-sm text-white focus:border-orange-500 focus:outline-none" />
-          {errors.cantidad && <p className="mt-1 text-xs text-red-400">{errors.cantidad.message}</p>}
-        </div>
-        <div>
-          <label className="mb-1 block text-xs text-slate-400">Precio</label>
-          <input type="number" step="0.01" {...register('precio', { valueAsNumber: true })}
-            className="w-full rounded-lg border border-slate-700 bg-slate-800 py-2 px-3 text-sm text-white focus:border-orange-500 focus:outline-none" />
-        </div>
-        <div>
-          <label className="mb-1 block text-xs text-slate-400">Descuento $</label>
-          <input type="number" step="0.01" {...register('descuento', { valueAsNumber: true })}
-            className="w-full rounded-lg border border-slate-700 bg-slate-800 py-2 px-3 text-sm text-white focus:border-orange-500 focus:outline-none" />
-        </div>
-        <div>
-          <label className="mb-1 block text-xs text-slate-400">ITBMS %</label>
-          <select {...register('imppor', { valueAsNumber: true })}
-            className="w-full rounded-lg border border-slate-700 bg-slate-800 py-2 px-3 text-sm text-white focus:border-orange-500 focus:outline-none">
-            {ITBMS_RATES.map(r => <option key={r} value={r}>{r}%</option>)}
-          </select>
-        </div>
-      </div>
-
-      <Button type="submit" size="sm" className="w-full sm:w-auto">
-        <Plus className="h-4 w-4 mr-1" /> Agregar
-      </Button>
-    </form>
-  )
 }
 
 /* ─── Forma de pago ─── */
@@ -323,8 +126,9 @@ function FormasPagoSection({
 export function NuevaFacturaPage() {
   const navigate        = useNavigate()
   const isOnline        = useOnlineStatus()
-  const [toast, setToast]   = useState<{ type: 'success' | 'error'; message: string } | null>(null)
+  const [toast, setToast]         = useState<{ type: 'success' | 'error'; message: string } | null>(null)
   const [savingOffline, setSavingOffline] = useState(false)
+  const [showBuscador, setShowBuscador]   = useState(false)
 
   const {
     cliente, setCliente,
@@ -424,7 +228,7 @@ export function NuevaFacturaPage() {
       {/* Cliente */}
       <section className="rounded-lg border border-slate-700 bg-slate-900 p-5 space-y-4">
         <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wide">Cliente</h2>
-        <ClienteSelector onSelect={setCliente} />
+        <ClienteSelector value={cliente} onSelect={setCliente} />
         {cliente && (
           <div className="rounded-lg bg-slate-800 px-4 py-3 grid grid-cols-2 gap-2 text-sm sm:grid-cols-4">
             <div><span className="text-slate-400 text-xs">Nombre</span><p className="text-white font-medium">{cliente.NOMBRE}</p></div>
@@ -475,10 +279,19 @@ export function NuevaFacturaPage() {
 
       {/* Ítems */}
       <section className="rounded-lg border border-slate-700 bg-slate-900 p-5 space-y-4">
-        <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wide">Ítems</h2>
-        <AgregarItemForm onAdd={handleAddItem} />
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wide">Ítems</h2>
+          <Button size="sm" variant="secondary" onClick={() => setShowBuscador(true)}>
+            <Plus className="h-4 w-4 mr-1" />Agregar producto
+          </Button>
+        </div>
 
-        {items.length > 0 && (
+        {items.length === 0 ? (
+          <div className="rounded-lg border-2 border-dashed border-slate-700 py-12 text-center">
+            <Package className="mx-auto h-8 w-8 text-slate-600 mb-2" />
+            <p className="text-sm text-slate-500">Sin productos · haz clic en "Agregar producto"</p>
+          </div>
+        ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="text-xs text-slate-400 border-b border-slate-700">
@@ -582,6 +395,15 @@ export function NuevaFacturaPage() {
           {isOnline ? 'Emitir Factura' : 'Guardar offline'}
         </Button>
       </div>
+
+      {/* Modal buscador */}
+      {showBuscador && (
+        <BuscadorProductoModal
+          modo="factura"
+          onSelect={item => { handleAddItem(item); setShowBuscador(false) }}
+          onClose={() => setShowBuscador(false)}
+        />
+      )}
     </div>
   )
 }

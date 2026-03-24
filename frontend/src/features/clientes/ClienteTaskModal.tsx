@@ -56,10 +56,10 @@ export function ClienteTaskModal({ cliente, onClose }: Props) {
         navigate('/facturas/nueva')
         break
       case 'presupuesto':
-        navigate('/presupuestos', { state: { cliente } })
+        navigate('/presupuestos/nuevo', { state: { cliente } })
         break
       case 'pedido':
-        navigate('/pedidos', { state: { cliente } })
+        navigate('/pedidos/nuevo', { state: { cliente } })
         break
       case 'cobro':
         navigate('/cobros', { state: { cliente } })
