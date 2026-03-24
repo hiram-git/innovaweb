@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/Badge'
 import { Spinner } from '@/components/ui/Spinner'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
+import { ClienteTaskModal } from './ClienteTaskModal'
 import api from '@/lib/axios'
 import type { Cliente } from '@/types'
 
@@ -181,6 +182,7 @@ export function ClientesPage() {
   const [q, setQ]           = useState('')
   const [search, setSearch] = useState('')
   const [showPanel, setShowPanel] = useState(false)
+  const [taskCliente, setTaskCliente] = useState<Cliente | null>(null)
 
   const { data, isLoading } = useQuery({
     queryKey: ['clientes', search],
@@ -227,7 +229,7 @@ export function ClientesPage() {
       ) : (
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
           {data?.map((cli) => (
-            <Card key={cli.CODIGO} className="hover:border-slate-600 transition-colors cursor-pointer">
+            <Card key={cli.CODIGO} className="hover:border-slate-600 transition-colors cursor-pointer" onClick={() => setTaskCliente(cli)}>
               <div className="flex items-start justify-between gap-2">
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-white truncate">{cli.NOMBRE}</p>
@@ -270,6 +272,9 @@ export function ClientesPage() {
 
       {/* Slide-over panel */}
       {showPanel && <NuevoClientePanel onClose={() => setShowPanel(false)} />}
+
+      {/* Task modal */}
+      {taskCliente && <ClienteTaskModal cliente={taskCliente} onClose={() => setTaskCliente(null)} />}
     </div>
   )
 }
