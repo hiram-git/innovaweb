@@ -167,6 +167,20 @@ export interface Presupuesto {
   INTEGRADO:      number | null
 }
 
+// ─── Pedido ────────────────────────────────────────────────────────────────
+// Columnas tal como las devuelve TRANSACCMAESTRO (CONTROL, NUMREF, NOMBRE…)
+export interface Pedido {
+  CONTROL:   string
+  NUMREF:    string | null
+  CODIGO:    string | null
+  NOMBRE:    string | null
+  FECEMIS:   number | null   // INT YYYYMMDD (formato Clarion)
+  MONTOBRU:  number | null
+  MONTOIMP:  number | null
+  MONTODES:  number | null
+  MONTOTOT:  number | null
+}
+
 // ─── API Response genérica ─────────────────────────────────────────────────
 export interface ApiResponse<T> {
   data:    T

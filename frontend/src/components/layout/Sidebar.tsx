@@ -1,7 +1,7 @@
 import { NavLink } from 'react-router-dom'
 import {
   LayoutDashboard, Users, Package, FileText, Zap,
-  Wrench, DollarSign, ClipboardList, Settings, LogOut, Building2,
+  Wrench, DollarSign, ClipboardList, ShoppingCart, Settings, LogOut, Building2,
 } from 'lucide-react'
 import { clsx } from 'clsx'
 import { useAuthStore } from '@/stores/authStore'
@@ -16,6 +16,7 @@ const navItems = [
   { to: '/ordenes-trabajo',  icon: Wrench,          label: 'Órd. Trabajo'    },
   { to: '/cobros',           icon: DollarSign,      label: 'Cobros'          },
   { to: '/presupuestos',     icon: ClipboardList,   label: 'Presupuestos'    },
+  { to: '/pedidos',          icon: ShoppingCart,    label: 'Pedidos'         },
   { to: '/configuracion',    icon: Settings,        label: 'Configuración'   },
 ]
 

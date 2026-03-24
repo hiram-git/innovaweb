@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import { FileText, ClipboardList, DollarSign, X } from 'lucide-react'
+import { FileText, ClipboardList, ShoppingCart, DollarSign, X } from 'lucide-react'
 import { useFacturaStore } from '@/stores/facturaStore'
 import type { Cliente } from '@/types'
 
@@ -13,15 +13,23 @@ const tasks = [
     id: 'presupuesto',
     icon: ClipboardList,
     label: 'Presupuesto',
-    description: 'Crear o ver presupuestos / cotizaciones',
+    description: 'Cotización — no mueve inventario',
     color: 'text-yellow-400',
     bg: 'bg-yellow-900/30 hover:bg-yellow-900/50 border-yellow-800/40',
+  },
+  {
+    id: 'pedido',
+    icon: ShoppingCart,
+    label: 'Pedido',
+    description: 'Reserva mercancía en el almacén',
+    color: 'text-blue-400',
+    bg: 'bg-blue-900/30 hover:bg-blue-900/50 border-blue-800/40',
   },
   {
     id: 'factura',
     icon: FileText,
     label: 'Nueva Factura',
-    description: 'Crear una factura de venta',
+    description: 'Despacha y registra salida de inventario',
     color: 'text-orange-400',
     bg: 'bg-orange-900/30 hover:bg-orange-900/50 border-orange-800/40',
   },
@@ -49,6 +57,9 @@ export function ClienteTaskModal({ cliente, onClose }: Props) {
         break
       case 'presupuesto':
         navigate('/presupuestos', { state: { cliente } })
+        break
+      case 'pedido':
+        navigate('/pedidos', { state: { cliente } })
         break
       case 'cobro':
         navigate('/cobros', { state: { cliente } })
