@@ -45,6 +45,10 @@ class ClienteController extends Controller
                 cp.DIRECC1, cp.NUMTEL, cp.DIRCORREO,
                 cp.TIPOCLI, cp.TIPOCOMERCIO, cp.DIASCRE,
                 cp.CONESPECIAL, cp.PORRETIMP,
+                ISNULL(cp.PERCREDITO,0)   AS PERCREDITO,
+                ISNULL(cp.LIMITECRE,0)    AS LIMITECRE,
+                ISNULL(cp.PORMAXDESGLO,0) AS PORMAXDESGLO,
+                ISNULL(cp.PORMAXDESPAR,0) AS PORMAXDESPAR,
                 bp.DESNOMBREEGEO1 AS provincia,
                 bd.DESNOMBREEGEO2 AS distrito,
                 bc.DESNOMBREEGEO3 AS corregimiento

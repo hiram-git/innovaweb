@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/Button'
 import { Toast } from '@/components/ui/Toast'
 import { ClienteSelector } from '@/components/ui/ClienteSelector'
 import { BuscadorProductoModal } from '@/components/ui/BuscadorProductoModal'
+import { useAuthStore } from '@/stores/authStore'
 import type { ItemFactura, FormaPago, NuevaFacturaPayload } from '@/types'
 
 /* ─── helpers ─── */
@@ -22,6 +23,7 @@ function calcItem(i: ItemFactura) {
 }
 
 /* ─── Forma de pago ─── */
+// API aliases CODTAR→CODINSTRUMENTO, NOMBRE→DESCRINSTRUMENTO for compatibility
 type InstrumentType = { CODINSTRUMENTO: string; DESCRINSTRUMENTO: string; FUNCION: number }
 
 function FormasPagoSection({
@@ -47,8 +49,8 @@ function FormasPagoSection({
 
   const remove = (i: number) => onChange(formasPago.filter((_, idx) => idx !== i))
 
-  const pagado = formasPago.reduce((s, fp) => s + (fp.monto || 0), 0)
-  const cambio = Math.max(0, pagado - total)
+  const pagado    = formasPago.reduce((s, fp) => s + (fp.monto || 0), 0)
+  const cambio    = Math.max(0, pagado - total)
   const pendiente = Math.max(0, total - pagado)
 
   return (
@@ -126,6 +128,7 @@ function FormasPagoSection({
 export function NuevaFacturaPage() {
   const navigate        = useNavigate()
   const isOnline        = useOnlineStatus()
+  const permisos        = useAuthStore(s => s.user?.permisos)
   const [toast, setToast]         = useState<{ type: 'success' | 'error'; message: string } | null>(null)
   const [savingOffline, setSavingOffline] = useState(false)
   const [showBuscador, setShowBuscador]   = useState(false)
@@ -179,9 +182,32 @@ export function NuevaFacturaPage() {
     }
   }
 
+  // ── Credit / discount derived rules ──────────────────────────────────────
+  const percredito   = Number(cliente?.PERCREDITO  ?? 0)   // 0=no credit, 1=allowed
+  const limitecre    = Number(cliente?.LIMITECRE   ?? 0)
+  const pormaxdesglo = Number(cliente?.PORMAXDESGLO ?? 0)  // max global discount %
+  const maxDescGlobal = pormaxdesglo > 0
+    ? (totales.subtotal * pormaxdesglo) / 100
+    : Infinity
+
   const handleSubmit = () => {
     if (!cliente) { setToast({ type: 'error', message: 'Seleccione un cliente' }); return }
     if (items.length === 0) { setToast({ type: 'error', message: 'Agregue al menos un ítem' }); return }
+
+    // Credit checks (mirrors legacy tarea_factura.php)
+    const saldo = totales.total - formasPago.reduce((s, fp) => s + (fp.monto || 0), 0)
+    if (percredito === 0 && saldo > 0) {
+      setToast({ type: 'error', message: 'El cliente no permite cancelar a crédito' }); return
+    }
+    if (percredito === 1 && limitecre > 0 && saldo > limitecre) {
+      setToast({ type: 'error', message: `El monto a crédito ($${saldo.toFixed(2)}) supera el límite permitido ($${limitecre.toFixed(2)})` }); return
+    }
+
+    // Discount checks
+    if (pormaxdesglo > 0 && descuentoGlobal > maxDescGlobal) {
+      setToast({ type: 'error', message: `Descuento global máximo: $${maxDescGlobal.toFixed(2)} (${pormaxdesglo}% del subtotal)` }); return
+    }
+
     if (tipoFactura === 'CONTADO' && formasPago.length === 0) {
       setToast({ type: 'error', message: 'Agregue al menos una forma de pago' }); return
     }
@@ -251,8 +277,16 @@ export function NuevaFacturaPage() {
               className="w-full rounded-lg border border-slate-700 bg-slate-800 py-2 px-3 text-sm text-white focus:border-orange-500 focus:outline-none"
             >
               <option value="CONTADO">Contado</option>
-              <option value="CREDITO">Crédito</option>
+              <option value="CREDITO" disabled={percredito === 0}>
+                Crédito{percredito === 0 ? ' (no permitido)' : ''}
+              </option>
             </select>
+            {percredito === 0 && cliente && (
+              <p className="mt-1 text-xs text-red-400">Este cliente no tiene crédito habilitado</p>
+            )}
+            {percredito === 1 && limitecre > 0 && (
+              <p className="mt-1 text-xs text-slate-500">Límite: ${limitecre.toFixed(2)}</p>
+            )}
           </div>
           {tipoFactura === 'CREDITO' && (
             <div>
@@ -262,12 +296,23 @@ export function NuevaFacturaPage() {
                 className="w-full rounded-lg border border-slate-700 bg-slate-800 py-2 px-3 text-sm text-white focus:border-orange-500 focus:outline-none" />
             </div>
           )}
-          <div>
-            <label className="mb-1 block text-xs text-slate-400">Descuento global $</label>
-            <input type="number" step="0.01" min={0} value={descuentoGlobal}
-              onChange={e => { setDescuentoGlobal(Number(e.target.value)); calcularTotales() }}
-              className="w-full rounded-lg border border-slate-700 bg-slate-800 py-2 px-3 text-sm text-white focus:border-orange-500 focus:outline-none" />
-          </div>
+          {(permisos?.desctoglo ?? 1) !== 0 && (
+            <div>
+              <label className="mb-1 block text-xs text-slate-400">Descuento global $</label>
+              <input type="number" step="0.01" min={0} value={descuentoGlobal}
+                onChange={e => { setDescuentoGlobal(Number(e.target.value)); calcularTotales() }}
+                className={`w-full rounded-lg border py-2 px-3 text-sm text-white focus:outline-none
+                  ${pormaxdesglo > 0 && descuentoGlobal > maxDescGlobal
+                    ? 'border-red-500 bg-red-900/20 focus:border-red-400'
+                    : 'border-slate-700 bg-slate-800 focus:border-orange-500'}`}
+              />
+              {pormaxdesglo > 0 && (
+                <p className={`mt-1 text-xs ${descuentoGlobal > maxDescGlobal ? 'text-red-400' : 'text-slate-500'}`}>
+                  Máx: ${maxDescGlobal === Infinity ? '—' : maxDescGlobal.toFixed(2)} ({pormaxdesglo}%)
+                </p>
+              )}
+            </div>
+          )}
           <div className="sm:col-span-2">
             <label className="mb-1 block text-xs text-slate-400">Observación</label>
             <input type="text" value={observacion}
@@ -400,6 +445,9 @@ export function NuevaFacturaPage() {
       {showBuscador && (
         <BuscadorProductoModal
           modo="factura"
+          ventamenos={permisos?.ventamenos}
+          actfacexi={permisos?.actfacexi}
+          cambiarprecio={permisos?.cambiarprecio}
           onSelect={item => { handleAddItem(item); setShowBuscador(false) }}
           onClose={() => setShowBuscador(false)}
         />

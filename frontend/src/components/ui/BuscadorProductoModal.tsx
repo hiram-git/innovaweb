@@ -37,9 +37,12 @@ interface ProductoBusqueda {
 const ITBMS_RATES = [0, 7, 10, 15] as const
 
 export interface BuscadorProductoModalProps {
-  modo:     'presupuesto' | 'pedido' | 'factura'
-  onSelect: (item: ItemFactura) => void
-  onClose:  () => void
+  modo:          'presupuesto' | 'pedido' | 'factura'
+  onSelect:      (item: ItemFactura) => void
+  onClose:       () => void
+  ventamenos?:   number   // 1 = puede vender con stock en negativo
+  actfacexi?:    number   // 1 = puede facturar ignorando stock
+  cambiarprecio?: number  // 0 = precio readonly (no puede cambiarlo)
 }
 
 // ─── Helpers de disponibilidad ────────────────────────────────────────────────
@@ -56,14 +59,24 @@ function isCompuesto(p: ProductoBusqueda): boolean {
   return (p.PROCOMPUESTO ?? 0) == 1
 }
 
-function puedeSeleccionar(p: ProductoBusqueda, modo: BuscadorProductoModalProps['modo']): boolean {
+function puedeSeleccionar(
+  p: ProductoBusqueda,
+  modo: BuscadorProductoModalProps['modo'],
+  ventamenos = 0,
+  actfacexi  = 0,
+): boolean {
   if (modo === 'presupuesto') return true
+  // mirrors buscar_prod.php logic
   return isServicio(p) || isCompuesto(p) || getDisponible(p) > 0
+      || ventamenos === 1 || actfacexi === 1
 }
 
 // ─── Componente principal ─────────────────────────────────────────────────────
 
-export function BuscadorProductoModal({ modo, onSelect, onClose }: BuscadorProductoModalProps) {
+export function BuscadorProductoModal({
+  modo, onSelect, onClose,
+  ventamenos = 0, actfacexi = 0, cambiarprecio = 1,
+}: BuscadorProductoModalProps) {
   const [q, setQ]             = useState('')
   const [dq, setDq]           = useState('')
   const [paso, setPaso]       = useState<1 | 2>(1)
@@ -93,7 +106,7 @@ export function BuscadorProductoModal({ modo, onSelect, onClose }: BuscadorProdu
   // ── Paso 1: seleccionar producto ──────────────────────────────────────────
 
   const handleSelectProd = (p: ProductoBusqueda) => {
-    if (!puedeSeleccionar(p, modo)) return
+    if (!puedeSeleccionar(p, modo, ventamenos, actfacexi)) return
     setProd(p)
     setQty(1)
     setPrecio(Number(p.PRECVEN1 ?? 0))
@@ -166,7 +179,7 @@ export function BuscadorProductoModal({ modo, onSelect, onClose }: BuscadorProdu
                   <div className="divide-y divide-slate-800">
                     {data.map(p => {
                       const disp   = getDisponible(p)
-                      const canSel = puedeSeleccionar(p, modo)
+                      const canSel = puedeSeleccionar(p, modo, ventamenos, actfacexi)
                       const esSrv  = isServicio(p)
                       const esCmp  = isCompuesto(p)
 
@@ -287,14 +300,20 @@ export function BuscadorProductoModal({ modo, onSelect, onClose }: BuscadorProdu
                   </div>
 
                   <div>
-                    <label className="block text-xs text-slate-400 mb-1">Precio unitario $</label>
+                    <label className="block text-xs text-slate-400 mb-1">
+                      Precio unitario ${cambiarprecio === 0 && <span className="ml-1 text-slate-500">(no editable)</span>}
+                    </label>
                     <input
                       type="number"
                       step="0.01"
                       min="0"
                       value={precio}
-                      onChange={e => setPrecio(parseFloat(e.target.value) || 0)}
-                      className="w-full rounded-lg border border-slate-700 bg-slate-800 py-2 px-3 text-sm text-white focus:border-orange-500 focus:outline-none"
+                      readOnly={cambiarprecio === 0}
+                      onChange={e => cambiarprecio !== 0 && setPrecio(parseFloat(e.target.value) || 0)}
+                      className={`w-full rounded-lg border py-2 px-3 text-sm text-white focus:outline-none
+                        ${cambiarprecio === 0
+                          ? 'border-slate-700 bg-slate-700/50 text-slate-400 cursor-not-allowed'
+                          : 'border-slate-700 bg-slate-800 focus:border-orange-500'}`}
                     />
                   </div>
 

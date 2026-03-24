@@ -21,9 +21,9 @@ class InstrumentosController extends Controller
     public function index(): JsonResponse
     {
         $instrumentos = DB::select(
-            "SELECT CODINSTRUMENTO, DESCRINSTRUMENTO, FUNCION
+            "SELECT CODTAR AS CODINSTRUMENTO, NOMBRE AS DESCRINSTRUMENTO, FUNCION
              FROM BASEINSTRUMENTOS
-             ORDER BY FUNCION ASC, DESCRINSTRUMENTO ASC"
+             ORDER BY FUNCION ASC, NOMBRE ASC"
         );
 
         return response()->json($instrumentos);

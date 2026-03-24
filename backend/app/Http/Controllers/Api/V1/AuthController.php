@@ -31,7 +31,22 @@ class AuthController extends Controller
 
         // Buscar usuario en la tabla del ERP
         $usuario = DB::selectOne(
-            "SELECT CODUSER, CLAVE, CLAVEWEB, VALVENDEDOR, VALDEPOSITO
+            "SELECT CODUSER, CLAVE, CLAVEWEB,
+                    ISNULL(VALVENDEDOR,'')   AS VALVENDEDOR,
+                    ISNULL(VALDEPOSITO,'')   AS VALDEPOSITO,
+                    ISNULL(ACTPRECIO,0)      AS ACTPRECIO,
+                    ISNULL(VALPRECIO,0)      AS VALPRECIO,
+                    ISNULL(CREACLIENTE,0)    AS CREACLIENTE,
+                    ISNULL(ACTCLIENTE,0)     AS ACTCLIENTE,
+                    ISNULL(VALCLIENTE,'')    AS VALCLIENTE,
+                    ISNULL(ACTDESCTOPAR,0)   AS ACTDESCTOPAR,
+                    ISNULL(ACTDESCTOGLOBAL,0) AS ACTDESCTOGLOBAL,
+                    ISNULL(CAMBIARPRECIO,0)  AS CAMBIARPRECIO,
+                    ISNULL(VENTAMENOS,0)     AS VENTAMENOS,
+                    ISNULL(ACTFACEXI,0)      AS ACTFACEXI,
+                    ISNULL(ACTDEPOSITO,0)    AS ACTDEPOSITO,
+                    ISNULL(VALDIASVENC,0)    AS VALDIASVENC,
+                    ISNULL(CLIRAPMTOCREDI,0) AS CLIRAPMTOCREDI
              FROM BASEUSUARIOS
              WHERE CODUSER = ?",
             [strtoupper(trim($request->usuario))]
@@ -109,13 +124,55 @@ class AuthController extends Controller
 
         $token = $user->createToken('api-token', ['*'], now()->addHours(8));
 
+        // Permisos de módulos desde BASEUSUARIOSEXT
+        $ext = DB::selectOne(
+            "SELECT ISNULL(VEN_PRESUPUESTO,0) AS VEN_PRESUPUESTO,
+                    ISNULL(VEN_PEDIDOS,0)     AS VEN_PEDIDOS,
+                    ISNULL(VEN_VENTAS,0)      AS VEN_VENTAS,
+                    ISNULL(ADM_CXC,0)         AS ADM_CXC
+             FROM BASEUSUARIOSEXT WHERE UPPER(CODUSER) = ?",
+            [$usuario->CODUSER]
+        );
+
+        // Precio mode (mirror de grabar_login.php)
+        $actPrecio  = (int)($usuario->ACTPRECIO ?? 0);
+        $valPrecio  = (int)($usuario->VALPRECIO ?? 0);
+        if ($actPrecio === 0 && $valPrecio === 0) {
+            $precioMode = 'libre';
+        } elseif ($actPrecio === 0 && $valPrecio > 0) {
+            $precioMode = $valPrecio;          // número de lista, ej. 1 → PRECIO1
+        } else {
+            $precioMode = 'no_definido';       // usar precio del cliente en BCP
+        }
+
         return response()->json([
             'token'      => $token->plainTextToken,
             'expires_at' => $token->accessToken->expires_at,
             'usuario'    => [
                 'codigo'       => $usuario->CODUSER,
-                'es_vendedor'  => (bool) $usuario->VALVENDEDOR,
-                'es_deposito'  => (bool) $usuario->VALDEPOSITO,
+                'codvendedor'  => trim($usuario->VALVENDEDOR ?? ''),
+                'codalmacen'   => trim($usuario->VALDEPOSITO ?? ''),
+                'permisos'     => [
+                    // módulos (de BASEUSUARIOSEXT)
+                    'ver_factura'     => (int)($ext?->VEN_VENTAS       ?? 1),
+                    'ver_presupuesto' => (int)($ext?->VEN_PRESUPUESTO  ?? 1),
+                    'ver_pedido'      => (int)($ext?->VEN_PEDIDOS       ?? 1),
+                    'ver_cobro'       => (int)($ext?->ADM_CXC           ?? 1),
+                    // inventario / venta
+                    'ventamenos'      => (int)($usuario->VENTAMENOS      ?? 0),
+                    'actfacexi'       => (int)($usuario->ACTFACEXI       ?? 0),
+                    // descuentos
+                    'desctopar'       => (int)($usuario->ACTDESCTOPAR   ?? 0),
+                    'desctoglo'       => (int)($usuario->ACTDESCTOGLOBAL ?? 0),
+                    // precio
+                    'cambiarprecio'   => (int)($usuario->CAMBIARPRECIO  ?? 0),
+                    'precio_mode'     => $precioMode,
+                    // clientes
+                    'creacliente'     => (int)($usuario->CREACLIENTE    ?? 0),
+                    'actcliente'      => (int)($usuario->ACTCLIENTE     ?? 0),
+                    // otros
+                    'valdiasvenc'     => (int)($usuario->VALDIASVENC    ?? 0),
+                ],
             ],
         ]);
     }

@@ -4,18 +4,33 @@ export interface LoginCredentials {
   password: string
 }
 
+export interface UserPermisos {
+  // módulo visibility (BASEUSUARIOSEXT)
+  ver_factura:     number   // VEN_VENTAS
+  ver_presupuesto: number   // VEN_PRESUPUESTO
+  ver_pedido:      number   // VEN_PEDIDOS
+  ver_cobro:       number   // ADM_CXC
+  // inventario / venta (BASEUSUARIOS)
+  ventamenos:      number   // vender por debajo del stock
+  actfacexi:       number   // facturar ignorando stock
+  // descuentos
+  desctopar:       number   // ACTDESCTOPAR  — descuento por ítem
+  desctoglo:       number   // ACTDESCTOGLOBAL — descuento global
+  // precio
+  cambiarprecio:   number   // puede cambiar precio del ítem
+  precio_mode:     'libre' | number | 'no_definido'
+  // clientes
+  creacliente:     number
+  actcliente:      number
+  // otros
+  valdiasvenc:     number   // puede editar días de vencimiento
+}
+
 export interface AuthUser {
-  id:      number
-  codigo:  string
-  email:   string
-  roles:   string[]
-  permisos: string[]
-  erp: {
-    CODUSER:     string
-    VALVENDEDOR: number
-    VALDEPOSITO: number
-    VALCONTADOR: number
-  }
+  codigo:      string
+  codvendedor: string
+  codalmacen:  string
+  permisos:    UserPermisos
 }
 
 export interface AuthState {
@@ -38,6 +53,10 @@ export interface Cliente {
   DIASCRE:       number | null
   CONESPECIAL:   number | null
   PORRETIMP:     number | null
+  PERCREDITO:    number | null   // 0=no credit, 1=credit with limit
+  LIMITECRE:     number | null   // credit limit amount
+  PORMAXDESGLO:  number | null   // max global discount %
+  PORMAXDESPAR:  number | null   // max per-item discount %
   provincia:     string | null
   distrito:      string | null
   corregimiento: string | null
