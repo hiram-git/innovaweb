@@ -17,21 +17,21 @@ class InventarioController extends Controller
 
         $count = DB::selectOne(
             "SELECT COUNT(*) AS total FROM INVENTARIO
-             WHERE INTEGRADO = 0
-               AND (CODPRO LIKE :q OR DESCRIP1 LIKE :q2)",
-            ['q' => "%{$q}%", 'q2' => "%{$q}%"]
+             WHERE ACTIVO = 0
+               AND (CODPRO LIKE :q OR DESCRIP1 LIKE :q2 OR CODREF LIKE :q3 OR DESCRIP2 LIKE :q4)",
+            ['q' => "%{$q}%", 'q2' => "%{$q}%", 'q3' => "%{$q}%", 'q4' => "%{$q}%"]
         );
         $total = $count?->total ?? 0;
 
         $items = DB::select(
-            "SELECT CODPRO, DESCRIP1, EXISTENCIA, CANRESERVADA,
+            "SELECT CODPRO, DESCRIP1, EXISTENCIA, CANRESERVADA, ISNULL(CANVEN,0) AS CANVEN,
                     PRECVEN1, IMPPOR, PROCOMPUESTO, TIPINV, UNIDAD
              FROM INVENTARIO
-             WHERE INTEGRADO = 0
-               AND (CODPRO LIKE :q OR DESCRIP1 LIKE :q2)
+             WHERE ACTIVO = 0
+               AND (CODPRO LIKE :q OR DESCRIP1 LIKE :q2 OR CODREF LIKE :q3 OR DESCRIP2 LIKE :q4)
              ORDER BY DESCRIP1
              OFFSET :offset ROWS FETCH NEXT :limit ROWS ONLY",
-            ['q' => "%{$q}%", 'q2' => "%{$q}%", 'offset' => $offset, 'limit' => $perPage]
+            ['q' => "%{$q}%", 'q2' => "%{$q}%", 'q3' => "%{$q}%", 'q4' => "%{$q}%", 'offset' => $offset, 'limit' => $perPage]
         );
 
         return response()->json([
