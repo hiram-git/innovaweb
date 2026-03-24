@@ -96,8 +96,8 @@ export function BuscadorProductoModal({ modo, onSelect, onClose }: BuscadorProdu
     if (!puedeSeleccionar(p, modo)) return
     setProd(p)
     setQty(1)
-    setPrecio(p.PRECVEN1 ?? 0)
-    setImppor(p.IMPPOR ?? 7)
+    setPrecio(Number(p.PRECVEN1 ?? 0))
+    setImppor(Number(p.IMPPOR ?? 7))
     setPaso(2)
   }
 
