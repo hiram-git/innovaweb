@@ -16,6 +16,7 @@ import { BuscadorProductoModal } from '@/components/ui/BuscadorProductoModal'
 import { Button } from '@/components/ui/Button'
 import { Toast } from '@/components/ui/Toast'
 import { ClienteSelector } from '@/components/ui/ClienteSelector'
+import { useAuthStore } from '@/stores/authStore'
 import type { Cliente, ItemFactura } from '@/types'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -35,8 +36,9 @@ interface Props {
 // ─── Componente ───────────────────────────────────────────────────────────────
 
 export function NuevaSolicitudPage({ tipo }: Props) {
-  const navigate  = useNavigate()
-  const location  = useLocation()
+  const navigate   = useNavigate()
+  const location   = useLocation()
+  const permisos   = useAuthStore(s => s.user?.permisos)
   const clienteNav = (location.state as { cliente?: Cliente } | null)?.cliente
 
   const [cliente,     setCliente]     = useState<Cliente | null>(clienteNav ?? null)
@@ -263,6 +265,9 @@ export function NuevaSolicitudPage({ tipo }: Props) {
       {showModal && (
         <BuscadorProductoModal
           modo={tipo}
+          ventamenos={permisos?.ventamenos}
+          actfacexi={permisos?.actfacexi}
+          cambiarprecio={permisos?.cambiarprecio}
           onSelect={item => { handleAddItem(item); setShowModal(false) }}
           onClose={() => setShowModal(false)}
         />

@@ -7,22 +7,30 @@ import { clsx } from 'clsx'
 import { useAuthStore } from '@/stores/authStore'
 import { useOnlineStatus } from '@/hooks/useOnlineStatus'
 
-const navItems = [
-  { to: '/',                 icon: LayoutDashboard, label: 'Dashboard'       },
-  { to: '/clientes',         icon: Users,           label: 'Clientes'        },
-  { to: '/inventario',       icon: Package,         label: 'Inventario'      },
-  { to: '/facturas',         icon: FileText,        label: 'Facturas'        },
-  { to: '/facturacion-electronica', icon: Zap,      label: 'FE / DGI'        },
-  { to: '/ordenes-trabajo',  icon: Wrench,          label: 'Órd. Trabajo'    },
-  { to: '/cobros',           icon: DollarSign,      label: 'Cobros'          },
-  { to: '/presupuestos',     icon: ClipboardList,   label: 'Presupuestos'    },
-  { to: '/pedidos',          icon: ShoppingCart,    label: 'Pedidos'         },
-  { to: '/configuracion',    icon: Settings,        label: 'Configuración'   },
-]
+// permiso=undefined → siempre visible (dashboard, config, etc.)
+const NAV_ITEMS = [
+  { to: '/',                        icon: LayoutDashboard, label: 'Dashboard'     },
+  { to: '/clientes',                icon: Users,           label: 'Clientes'      },
+  { to: '/inventario',              icon: Package,         label: 'Inventario'    },
+  { to: '/facturas',                icon: FileText,        label: 'Facturas',       permiso: 'ver_factura'     },
+  { to: '/facturacion-electronica', icon: Zap,             label: 'FE / DGI',       permiso: 'ver_factura'     },
+  { to: '/presupuestos',            icon: ClipboardList,   label: 'Presupuestos',   permiso: 'ver_presupuesto' },
+  { to: '/pedidos',                 icon: ShoppingCart,    label: 'Pedidos',        permiso: 'ver_pedido'      },
+  { to: '/cobros',                  icon: DollarSign,      label: 'Cobros',         permiso: 'ver_cobro'       },
+  { to: '/ordenes-trabajo',         icon: Wrench,          label: 'Órd. Trabajo'  },
+  { to: '/configuracion',           icon: Settings,        label: 'Configuración' },
+] as const
 
 export function Sidebar() {
   const { user, clearAuth } = useAuthStore()
   const isOnline = useOnlineStatus()
+
+  const permisos = user?.permisos
+  const navItems = NAV_ITEMS.filter(item => {
+    if (!item.permiso) return true
+    if (!permisos) return true   // aún no cargado → mostrar todo
+    return (permisos[item.permiso as keyof typeof permisos] as number) !== 0
+  })
 
   return (
     <aside className="flex h-full w-64 flex-col border-r border-slate-700 bg-slate-900">
