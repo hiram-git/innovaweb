@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\V1\PedidoController;
 use App\Http\Controllers\Api\V1\InstrumentosController;
 use App\Http\Controllers\Api\V1\ConfiguracionController;
 use App\Http\Controllers\Api\V1\DashboardController;
+use App\Http\Controllers\Api\V1\SetupController;
 
 /*
 |--------------------------------------------------------------------------
@@ -37,6 +38,10 @@ Route::prefix('v1')->group(function () {
         'version' => '1.0.0',
         'time'    => now()->toIso8601String(),
     ]))->name('api.ping');
+
+    // ── Instalador inicial (sin auth — bloqueado si ya está configurado) ─────
+    Route::get('/setup/status', [SetupController::class, 'status'])->name('setup.status');
+    Route::post('/setup',       [SetupController::class, 'store'])->name('setup.store');
 });
 
 // ─── Rutas protegidas (requieren token Sanctum) ───────────────────────────────
