@@ -51,22 +51,17 @@ class DashboardController extends Controller
                AND FECEMIS >= CONVERT(INT, CONVERT(VARCHAR(8), DATEADD(day, -90, GETDATE()), 112))"
         )?->total ?? 0);
 
-        // Últimas 10 facturas para la tabla del dashboard
-        $ultimasFacturas = DB::select(
+        // Top 10 clientes con más facturas
+        $topClientes = DB::select(
             "SELECT TOP (10)
-                m.CONTROL AS CONTROLMAESTRO,
-                m.NUMREF  AS NROFAC,
-                m.NOMBRE  AS NOMCLIENTE,
-                m.FECEMIS AS FECHA,
-                m.MONTOTOT,
-                m.MONTOSAL,
-                m.TIPOFACTURA AS TIPTRAN,
-                d.RESULTADO   AS FE_ESTADO,
-                d.CUFE
+                m.CODIGO,
+                m.NOMBRE,
+                COUNT(*)          AS total_facturas,
+                SUM(m.MONTOTOT)   AS monto_total
              FROM TRANSACCMAESTRO m
-             LEFT JOIN Documentos d ON d.CONTROL = m.CONTROL
              WHERE m.TIPTRAN = 'FAC'
-             ORDER BY m.FECEMIS DESC"
+             GROUP BY m.CODIGO, m.NOMBRE
+             ORDER BY total_facturas DESC"
         );
 
         return response()->json([
@@ -76,7 +71,7 @@ class DashboardController extends Controller
                 'fe_aceptadas_mes' => $feAceptadasMes,
                 'clientes_activos' => $clientesActivos,
             ],
-            'ultimas_facturas' => $ultimasFacturas,
+            'top_clientes' => $topClientes,
         ]);
     }
 }

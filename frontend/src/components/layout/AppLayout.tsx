@@ -4,15 +4,15 @@ import { OfflineBanner } from '@/components/ui/OfflineBanner'
 import { OfflineQueue } from '@/components/ui/OfflineQueue'
 import { InstallPWA } from '@/components/ui/InstallPWA'
 import { useOnlineStatus } from '@/hooks/useOnlineStatus'
-import { FileText, Users, Package, DollarSign, LayoutDashboard } from 'lucide-react'
+import { Users, DollarSign, LayoutDashboard, ClipboardList, ShoppingCart } from 'lucide-react'
 import { clsx } from 'clsx'
 
 const mobileNav = [
-  { to: '/',          icon: LayoutDashboard, label: 'Inicio'     },
-  { to: '/facturas',  icon: FileText,        label: 'Facturas'   },
-  { to: '/clientes',  icon: Users,           label: 'Clientes'   },
-  { to: '/inventario',icon: Package,         label: 'Inventario' },
-  { to: '/cobros',    icon: DollarSign,      label: 'Cobros'     },
+  { to: '/',             icon: LayoutDashboard, label: 'Inicio'      },
+  { to: '/clientes',     icon: Users,           label: 'Clientes'    },
+  { to: '/cobros',       icon: DollarSign,      label: 'Cobros'      },
+  { to: '/pedidos',      icon: ShoppingCart,    label: 'Pedidos'     },
+  { to: '/presupuestos', icon: ClipboardList,   label: 'Cotizaciones'},
 ]
 
 export function AppLayout() {

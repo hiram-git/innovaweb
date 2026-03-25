@@ -1,6 +1,6 @@
 import { NavLink } from 'react-router-dom'
 import {
-  LayoutDashboard, Users, Package, FileText, Zap,
+  LayoutDashboard, Users, FileText, Zap,
   Wrench, DollarSign, ClipboardList, ShoppingCart, Settings, LogOut, Building2,
 } from 'lucide-react'
 import { clsx } from 'clsx'
@@ -11,7 +11,6 @@ import { useOnlineStatus } from '@/hooks/useOnlineStatus'
 const NAV_ITEMS = [
   { to: '/',                        icon: LayoutDashboard, label: 'Dashboard'     },
   { to: '/clientes',                icon: Users,           label: 'Clientes'      },
-  { to: '/inventario',              icon: Package,         label: 'Inventario'    },
   { to: '/facturas',                icon: FileText,        label: 'Facturas',       permiso: 'ver_factura'     },
   { to: '/facturacion-electronica', icon: Zap,             label: 'FE / DGI',       permiso: 'ver_factura'     },
   { to: '/presupuestos',            icon: ClipboardList,   label: 'Presupuestos',   permiso: 'ver_presupuesto' },
