@@ -16,11 +16,13 @@ import { PresupuestosPage } from '@/features/presupuestos/PresupuestosPage'
 import { PedidosPage } from '@/features/pedidos/PedidosPage'
 import { NuevaSolicitudPage } from '@/features/solicitudes/NuevaSolicitudPage'
 import { ConfiguracionPage } from '@/features/configuracion/ConfiguracionPage'
+import { SetupGuard } from '@/features/setup/SetupGuard'
 
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
+        <SetupGuard>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route element={<ProtectedRoute />}>
@@ -42,6 +44,7 @@ export default function App() {
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+        </SetupGuard>
       </BrowserRouter>
     </QueryClientProvider>
   )
