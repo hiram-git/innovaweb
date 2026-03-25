@@ -148,10 +148,13 @@ class SetupController extends Controller
 
     /**
      * Quote a .env value if it contains whitespace or shell-special characters.
+     * Backslash is intentionally excluded from quoting triggers because SQL Server
+     * instance names (e.g. HOST\SQLEXPRESS) must be stored unquoted — phpdotenv
+     * processes escape sequences inside double-quoted values and would mangle \S.
      */
     private function escapeEnvValue(string $value): string
     {
-        if (preg_match('/[\s#$"\'\\\\]/', $value)) {
+        if (preg_match('/[\s#$"\']/', $value)) {
             return '"' . str_replace('"', '\\"', $value) . '"';
         }
 
