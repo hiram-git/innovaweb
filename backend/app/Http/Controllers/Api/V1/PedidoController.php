@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Services\CadenaControlService;
+use App\Traits\ErpInsert;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -17,6 +18,8 @@ use Illuminate\Support\Facades\DB;
  */
 class PedidoController extends Controller
 {
+    use ErpInsert;
+
     public function __construct(private readonly CadenaControlService $cadena) {}
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -105,9 +108,15 @@ class PedidoController extends Controller
             'observacion'       => ['nullable', 'string', 'max:500'],
         ]);
 
+        $coduser    = $request->user()->erp_coduser ?? '';
+        $erpUser    = $this->getErpUserData($coduser);
+        $codven     = $erpUser['codven'];
+        $codAlm     = $erpUser['codalmacen'];
+
         $codCliente = strtoupper(trim($data['codcliente']));
         $cliente    = DB::selectOne(
-            "SELECT NOMBRE, TIPOCLI FROM BASECLIENTESPROVEEDORES WHERE CODIGO = ? AND TIPREG = '1'",
+            "SELECT NOMBRE, TIPOCLI, ISNULL(DIRECC1,'') AS DIRECC1
+             FROM BASECLIENTESPROVEEDORES WHERE CODIGO = ? AND TIPREG = '1'",
             [$codCliente]
         );
         if (! $cliente) {
@@ -126,7 +135,6 @@ class PedidoController extends Controller
                 $sinStock[] = "{$item['codpro']} (no encontrado)";
                 continue;
             }
-            // Servicios (TIPINV=S o S*) y productos compuestos no necesitan validación
             if (in_array($inv->TIPINV, ['S', 'SRV', '1']) || $inv->PROCOMPUESTO == '1') {
                 continue;
             }
@@ -144,14 +152,13 @@ class PedidoController extends Controller
 
         DB::beginTransaction();
         try {
-            // Número correlativo
-            $empresa = DB::selectOne("SELECT NROPEDCLI FROM BASEEMPRESA WHERE CONTROL = 1");
-            $numref  = str_pad((string) ((int) ($empresa->NROPEDCLI ?? 1)), 10, '0', STR_PAD_LEFT);
-
+            $empresa  = DB::selectOne("SELECT NROPEDCLI FROM BASEEMPRESA WHERE CONTROL = 1");
+            $numref   = str_pad((string) ((int) ($empresa->NROPEDCLI ?? 1)), 10, '0', STR_PAD_LEFT);
             [$dias, $hora, $ale] = $this->cadena->componentes();
-            $control = "{$dias}{$hora}{$ale}PE";
+            $control  = "{$dias}{$hora}{$ale}PE";
+            $fecemis  = (int) now('America/Panama')->format('Ymd');
+            $fecemiss = now('America/Panama')->format('Ymd');
 
-            // Cálculos de totales
             $montoBru = 0.0; $montoImp = 0.0;
             $montoDes = (float) ($data['descuentoGlobal'] ?? 0);
             $itemsCalc = [];
@@ -164,52 +171,70 @@ class PedidoController extends Controller
                 $itemsCalc[] = array_merge($item, ['_sub' => $sub, '_itb' => $itb]);
             }
 
-            $montoTot = $montoBru + $montoImp - $montoDes;
+            $montoTot = round($montoBru + $montoImp - $montoDes, 2);
 
-            // TRANSACCMAESTRO
+            // TRANSACCMAESTRO — esquema completo del ERP
             DB::statement(
-                "INSERT INTO TRANSACCMAESTRO
-                    (CONTROL,TIPREG,TIPTRAN,CODIGO,NOMBRE,FECEMIS,NUMREF,
-                     MONTOBRU,MONTOIMP,MONTODES,MONTOTOT,TIPOCLI,CODVEN)
-                 VALUES (:ctrl,'1','PEDxCLI',:cod,:nom,:fecemis,:numref,
-                         :bru,:imp,:des,:tot,:tcli,:cven)",
+                "INSERT INTO TRANSACCMAESTRO (
+                    CONTROL,TIPREG,CODIGO,TIPTRAN,NUMREF,DESCRIP1,
+                    FECEMIS,FECEMISS,DIASVEN,FECVENC,FECVENCS,
+                    MONTOBRU,MONTODES,PORDES,MONTOSUB,MONTOIMP,PORIMP,
+                    MONTOPAG,MONTOTOT,MONTOSAL,MONTOEFE,MONTOCHE,MONTOTAR,
+                    NOMBRE,MARCA,CONTADOR,TOTCONTADOR,CONTROLDOC,MONTOPAGF,
+                    RIF,NIT,MONTOCOS,TIPODOC,CAMBIO,CODVEN,TIPOCLI,
+                    COMISV,COMISC,MONTORET,PORRET,MONTOPA,COMISVEN,COMISCOB,
+                    DIRECCION,CODALENT,ACTBANCO,MONTODESCUENTO,MARCARE,HORA,
+                    CODUSER,TOTALEXENTAS,BASEIMPONIBLE,OTRAPLAZA,BASEIMPONIBLEIVA,
+                    FACTORCAMBIO,SIGNOMONEDA,PARCONTROL
+                ) VALUES (
+                    :ctrl,1,:codigo,'PEDxCLI',:numref,:descrip1,
+                    :fecemis,:fecemiss,0,:fecemis,:fecemiss,
+                    :montobru,:montodes,0,:montobru,:montoimp,0,
+                    0,:montotot,:montotot,:montotot,0,0,
+                    :nombre,0,1,0,:ctrl,0,
+                    :codigo,'',0,0,0,:codven,:tipocli,
+                    0,0,0,0,0,0,0,
+                    :direcc,:codalmacen,0,:montodes,0,:hora,
+                    :coduser,0,:montobru,0,:montobru,
+                    1,'Balboa',1
+                )",
                 [
-                    'ctrl'    => $control,
-                    'cod'     => $codCliente,
-                    'nom'     => $cliente->NOMBRE,
-                    'numref'  => $numref,
-                    'fecemis' => (int) now('America/Panama')->format('Ymd'),
-                    'bru'     => round($montoBru, 2),
-                    'imp'     => round($montoImp, 2),
-                    'des'     => round($montoDes, 2),
-                    'tot'     => round($montoTot, 2),
-                    'tcli'    => $cliente->TIPOCLI ?? '',
-                    'cven'    => $request->user()->erp_coduser ?? '',
+                    'ctrl'      => $control,
+                    'codigo'    => $codCliente,
+                    'numref'    => $numref,
+                    'descrip1'  => "Pedido {$numref}",
+                    'fecemis'   => $fecemis,
+                    'fecemiss'  => $fecemiss,
+                    'montobru'  => round($montoBru, 2),
+                    'montodes'  => round($montoDes, 2),
+                    'montoimp'  => round($montoImp, 2),
+                    'montotot'  => $montoTot,
+                    'nombre'    => $cliente->NOMBRE,
+                    'codven'    => $codven,
+                    'tipocli'   => $cliente->TIPOCLI ?? '',
+                    'direcc'    => $cliente->DIRECC1,
+                    'codalmacen'=> $codAlm,
+                    'hora'      => $hora,
+                    'coduser'   => $coduser,
                 ]
             );
 
             // TRANSACCDETALLES + reserva de inventario
             foreach ($itemsCalc as $item) {
                 [$d2, $h2, $a2] = $this->cadena->componentes();
-                $codpro = strtoupper(trim($item['codpro']));
+                $fechora = "{$d2}{$h2}{$a2}PD";
+                $codpro  = strtoupper(trim($item['codpro']));
+                $dsc     = (float) ($item['descuento'] ?? 0);
+                $pordes  = ($item['precio'] > 0 && $item['cantidad'] > 0)
+                    ? round($dsc / ($item['precio'] * $item['cantidad']) * 100, 4)
+                    : 0.0;
 
-                DB::statement(
-                    "INSERT INTO TRANSACCDETALLES
-                        (FECHORA,CONTROL,CODPRO,DESCRIP1,CANTIDAD,PRECOSUNI,
-                         MONTODESCUENTO,COSTOADU1,IMPPOR,MONTOIMP,COMPONENTE,INTEGRADO)
-                     VALUES (:fh,:ctrl,:cod,:des,:cant,:prec,:dsc,:tot,:imp,:itb,0,0)",
-                    [
-                        'fh'   => "{$d2}{$h2}{$a2}PD",
-                        'ctrl' => $control,
-                        'cod'  => $codpro,
-                        'des'  => $item['descrip'],
-                        'cant' => $item['cantidad'],
-                        'prec' => $item['precio'],
-                        'dsc'  => $item['descuento'] ?? 0,
-                        'tot'  => round($item['_sub'] + $item['_itb'], 2),
-                        'imp'  => $item['imppor'],
-                        'itb'  => round($item['_itb'], 2),
-                    ]
+                $this->insertDetalle(
+                    $control, $fechora, $codpro, $item['descrip'],
+                    (float) $item['cantidad'], (float) $item['precio'], $dsc,
+                    (float) $item['imppor'], $item['_itb'], $item['_sub'],
+                    'PEDxCLI', $fecemis, $fecemiss,
+                    $codCliente, $codAlm, $codven, $pordes
                 );
 
                 // Reservar inventario (excluir servicios y compuestos)
@@ -354,52 +379,75 @@ class PedidoController extends Controller
             $montoSal  = $data['tipoFactura'] === 'CREDITO' ? $montoTot : 0.0;
             $fechaVenc = (int) now('America/Panama')->addDays($diasVenc)->format('Ymd');
 
+            $erpUser   = $this->getErpUserData($request->user()->erp_coduser ?? '');
+            $codven    = $pedido->CODVEN ?? $erpUser['codven'];
+            $codAlm    = $erpUser['codalmacen'];
+            $fecemis   = (int) now('America/Panama')->format('Ymd');
+            $fecemiss  = now('America/Panama')->format('Ymd');
+            $coduser   = $request->user()->erp_coduser ?? '';
+
             DB::statement(
-                "INSERT INTO TRANSACCMAESTRO
-                    (CONTROL,TIPREG,TIPTRAN,TIPOFACTURA,CODIGO,NOMBRE,FECEMIS,NUMREF,
-                     MONTOBRU,MONTOIMP,MONTODES,MONTOTOT,MONTOSAL,CAMBIO,
-                     DIASVEN,FECVENCS,TIPOCLI,CODVEN)
-                 VALUES (:ctrl,'1','FAC',:tipofac,:cod,:nom,:fecemis,:numref,
-                         :bru,:imp,:des,:tot,:sal,:cambio,:dias,:fvenc,:tcli,:cven)",
+                "INSERT INTO TRANSACCMAESTRO (
+                    CONTROL,TIPREG,CODIGO,TIPTRAN,TIPOFACTURA,NUMREF,DESCRIP1,
+                    FECEMIS,FECEMISS,DIASVEN,FECVENC,FECVENCS,
+                    MONTOBRU,MONTODES,PORDES,MONTOSUB,MONTOIMP,PORIMP,
+                    MONTOPAG,MONTOTOT,MONTOSAL,MONTOEFE,MONTOCHE,MONTOTAR,
+                    NOMBRE,MARCA,CONTADOR,TOTCONTADOR,CONTROLDOC,MONTOPAGF,
+                    RIF,NIT,MONTOCOS,TIPODOC,CAMBIO,CODVEN,TIPOCLI,
+                    COMISV,COMISC,MONTORET,PORRET,MONTOPA,COMISVEN,COMISCOB,
+                    DIRECCION,CODALENT,ACTBANCO,MONTODESCUENTO,MARCARE,HORA,
+                    CODUSER,TOTALEXENTAS,BASEIMPONIBLE,OTRAPLAZA,BASEIMPONIBLEIVA,
+                    FACTORCAMBIO,SIGNOMONEDA,PARCONTROL
+                ) VALUES (
+                    :ctrl,1,:codigo,'FAC',:tipofac,:numref,:descrip1,
+                    :fecemis,:fecemiss,:diasven,:fecvenc,:fecvencs,
+                    :montobru,:montodes,0,:montobru,:montoimp,0,
+                    0,:montotot,:montosal,:montotot,0,0,
+                    :nombre,0,1,0,:ctrl,0,
+                    :codigo,'',0,0,:cambio,:codven,:tipocli,
+                    0,0,0,0,0,0,0,
+                    '',:codalmacen,0,:montodes,0,:hora,
+                    :coduser,0,:montobru,0,:montobru,
+                    1,'Balboa',1
+                )",
                 [
-                    'ctrl'    => $controlFac,
-                    'tipofac' => $data['tipoFactura'],
-                    'fecemis' => (int) now('America/Panama')->format('Ymd'),
-                    'cod'     => $pedido->CODIGO,
-                    'nom'     => $pedido->NOMBRE,
-                    'numref'  => $numref,
-                    'bru'     => $pedido->MONTOBRU,
-                    'imp'     => $pedido->MONTOIMP,
-                    'des'     => $pedido->MONTODES,
-                    'tot'     => round($montoTot, 2),
-                    'sal'     => round($montoSal, 2),
-                    'cambio'  => round($cambio, 2),
-                    'dias'    => $diasVenc,
-                    'fvenc'   => $fechaVenc,
-                    'tcli'    => $pedido->TIPOCLI ?? '',
-                    'cven'    => $pedido->CODVEN ?? '',
+                    'ctrl'      => $controlFac,
+                    'codigo'    => $pedido->CODIGO,
+                    'tipofac'   => $data['tipoFactura'],
+                    'numref'    => $numref,
+                    'descrip1'  => "Factura {$numref}",
+                    'fecemis'   => $fecemis,
+                    'fecemiss'  => $fecemiss,
+                    'diasven'   => $diasVenc,
+                    'fecvenc'   => $fechaVenc,
+                    'fecvencs'  => (string) $fechaVenc,
+                    'montobru'  => $pedido->MONTOBRU,
+                    'montodes'  => $pedido->MONTODES,
+                    'montoimp'  => $pedido->MONTOIMP,
+                    'montotot'  => round($montoTot, 2),
+                    'montosal'  => round($montoSal, 2),
+                    'nombre'    => $pedido->NOMBRE,
+                    'cambio'    => round($cambio, 2),
+                    'codven'    => $codven,
+                    'tipocli'   => $pedido->TIPOCLI ?? '',
+                    'codalmacen'=> $codAlm,
+                    'hora'      => $hora,
+                    'coduser'   => $coduser,
                 ]
             );
 
             foreach ($detalles as $det) {
                 [$d2, $h2, $a2] = $this->cadena->componentes();
-                DB::statement(
-                    "INSERT INTO TRANSACCDETALLES
-                        (FECHORA,CONTROL,CODPRO,DESCRIP1,CANTIDAD,PRECOSUNI,
-                         MONTODESCUENTO,COSTOADU1,IMPPOR,MONTOIMP,COMPONENTE,INTEGRADO)
-                     VALUES (:fh,:ctrl,:cod,:des,:cant,:prec,:dsc,:tot,:imp,:itb,0,0)",
-                    [
-                        'fh'   => "{$d2}{$h2}{$a2}02",
-                        'ctrl' => $controlFac,
-                        'cod'  => $det->CODPRO,
-                        'des'  => $det->DESCRIP1,
-                        'cant' => $det->CANTIDAD,
-                        'prec' => $det->PRECOSUNI,
-                        'dsc'  => $det->MONTODESCUENTO,
-                        'tot'  => $det->COSTOADU1,
-                        'imp'  => $det->IMPPOR,
-                        'itb'  => $det->MONTOIMP,
-                    ]
+                $fechora = "{$d2}{$h2}{$a2}02";
+                $sub = (float) $det->CANTIDAD * (float) $det->PRECOSUNI - (float) $det->MONTODESCUENTO;
+
+                $this->insertDetalle(
+                    $controlFac, $fechora, $det->CODPRO, $det->DESCRIP1,
+                    (float) $det->CANTIDAD, (float) $det->PRECOSUNI,
+                    (float) $det->MONTODESCUENTO,
+                    (float) $det->IMPPOR, (float) $det->MONTOIMP, $sub,
+                    'FAC', $fecemis, $fecemiss,
+                    $pedido->CODIGO, $codAlm, $codven
                 );
 
                 $inv = DB::selectOne(
@@ -434,15 +482,12 @@ class PedidoController extends Controller
 
             foreach ($data['formasPago'] as $fp) {
                 [$d3, $h3, $a3] = $this->cadena->componentes();
-                DB::statement(
-                    "INSERT INTO TRANSACCPAGOS (FECHORA,CONTROL,CODTAR,MONTOPAG,INTEGRADO)
-                     VALUES (:fh,:ctrl,:cod,:m,0)",
-                    [
-                        'fh'   => "{$d3}{$h3}{$a3}03",
-                        'ctrl' => $controlFac,
-                        'cod'  => $fp['instrumento'],
-                        'm'    => round((float) $fp['monto'], 2),
-                    ]
+                $ctrlPago = "{$d3}{$h3}{$a3}03";
+                $codtar   = $fp['instrumento'];
+                $this->insertPago(
+                    $controlFac, $ctrlPago, $codtar,
+                    (float) $fp['monto'], $fecemis,
+                    $this->getFuncionInstrumento($codtar)
                 );
             }
 
