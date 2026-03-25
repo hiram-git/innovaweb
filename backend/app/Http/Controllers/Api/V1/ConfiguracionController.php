@@ -17,54 +17,6 @@ use Illuminate\Support\Facades\DB;
  */
 class ConfiguracionController extends Controller
 {
-    // ─── Empresa ──────────────────────────────────────────────────────────────
-
-    public function getEmpresa(): JsonResponse
-    {
-        $empresa = DB::selectOne(
-            "SELECT RAZONSOCIAL, RUC, DV, DIRECC1 AS DIRECCION, TEL1 AS TEL,
-                EMAIL, LOGO_URL
-             FROM BASEEMPRESA WHERE CONTROL = 1"
-        );
-
-        if (! $empresa) {
-            return response()->json(['message' => 'Configuración de empresa no encontrada.'], 404);
-        }
-
-        return response()->json($empresa);
-    }
-
-    public function updateEmpresa(Request $request): JsonResponse
-    {
-        $data = $request->validate([
-            'RAZONSOCIAL' => ['required', 'string', 'max:150'],
-            'RUC'         => ['required', 'string', 'max:20'],
-            'DV'          => ['required', 'string', 'max:3'],
-            'DIRECCION'   => ['nullable', 'string', 'max:200'],
-            'TEL'         => ['nullable', 'string', 'max:20'],
-            'EMAIL'       => ['nullable', 'email', 'max:100'],
-            'LOGO_URL'    => ['nullable', 'url', 'max:500'],
-        ]);
-
-        DB::statement(
-            "UPDATE BASEEMPRESA SET
-                RAZONSOCIAL = :rs, RUC = :ruc, DV = :dv,
-                DIRECC1 = :dir, TEL1 = :tel, EMAIL = :email, LOGO_URL = :logo
-             WHERE CONTROL = 1",
-            [
-                'rs'    => $data['RAZONSOCIAL'],
-                'ruc'   => $data['RUC'],
-                'dv'    => $data['DV'],
-                'dir'   => $data['DIRECCION'] ?? '',
-                'tel'   => $data['TEL'] ?? '',
-                'email' => $data['EMAIL'] ?? '',
-                'logo'  => $data['LOGO_URL'] ?? '',
-            ]
-        );
-
-        return response()->json(['message' => 'Datos de empresa actualizados.']);
-    }
-
     // ─── FE / DGI ─────────────────────────────────────────────────────────────
 
     public function getFE(): JsonResponse
