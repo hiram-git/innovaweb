@@ -13,6 +13,10 @@ use PDOException;
 
 class SetupController extends Controller
 {
+    // Placeholder values that ship in .env.example — treat them as "not configured"
+    private const PLACEHOLDER_HOST = 'NOMBRE_PC\SQLEXPRESS';
+    private const PLACEHOLDER_DB   = 'NOMBRE_BASE_DE_DATOS';
+
     /**
      * Return whether the initial DB setup is still required.
      * Public endpoint — no authentication needed.
@@ -23,7 +27,8 @@ class SetupController extends Controller
     }
 
     /**
-     * Test the provided DB credentials and, on success, persist them to .env.
+     * Test the provided DB credentials and, on success, write .env from .env.example
+     * with the user-supplied values substituted in.
      * Blocked once the app is already configured.
      */
     public function store(Request $request): JsonResponse
@@ -55,7 +60,8 @@ class SetupController extends Controller
             );
         }
 
-        $this->writeEnv([
+        // Build .env from .env.example, substituting user-supplied values
+        $this->writeEnvFromExample([
             'DB_HOST'      => $data['servidor'],
             'DB_DATABASE'  => $data['dbname'],
             'DB_USERNAME'  => $data['usuario'],
@@ -63,6 +69,8 @@ class SetupController extends Controller
             'APP_TIMEZONE' => $data['timezone'],
         ]);
 
+        // Generate APP_KEY if .env.example left it blank
+        Artisan::call('key:generate', ['--force' => true]);
         Artisan::call('config:clear');
 
         return response()->json(['message' => 'Configuración guardada correctamente.']);
@@ -71,7 +79,10 @@ class SetupController extends Controller
     // ─── Helpers ──────────────────────────────────────────────────────────────
 
     /**
-     * Setup is needed when DB_HOST or DB_DATABASE are absent/blank in .env.
+     * Setup is needed when:
+     *  - .env does not exist, OR
+     *  - DB_HOST / DB_DATABASE are empty or still hold the .env.example placeholders, OR
+     *  - APP_KEY is empty (key:generate hasn't been run yet)
      */
     private function needsSetup(): bool
     {
@@ -85,23 +96,44 @@ class SetupController extends Controller
 
         preg_match('/^DB_HOST=(.*)$/m', $content, $hostMatch);
         preg_match('/^DB_DATABASE=(.*)$/m', $content, $dbMatch);
+        preg_match('/^APP_KEY=(.*)$/m', $content, $keyMatch);
 
-        $host = trim($hostMatch[1] ?? '');
-        $db   = trim($dbMatch[1] ?? '');
+        $host   = trim($hostMatch[1] ?? '');
+        $db     = trim($dbMatch[1] ?? '');
+        $appKey = trim($keyMatch[1] ?? '');
 
-        return $host === '' || $db === '';
+        if ($host === '' || $host === self::PLACEHOLDER_HOST) {
+            return true;
+        }
+        if ($db === '' || $db === self::PLACEHOLDER_DB) {
+            return true;
+        }
+        if ($appKey === '') {
+            return true;
+        }
+
+        return false;
     }
 
     /**
-     * Replace or append key=value pairs in the .env file.
-     * Wraps values that contain spaces in double quotes.
+     * Copy .env.example → .env (full content), then replace the given keys.
+     * Falls back to the existing .env content if .env.example is missing.
      */
-    private function writeEnv(array $values): void
+    private function writeEnvFromExample(array $overrides): void
     {
-        $envPath = base_path('.env');
-        $content = file_exists($envPath) ? file_get_contents($envPath) : '';
+        $examplePath = base_path('.env.example');
+        $envPath     = base_path('.env');
 
-        foreach ($values as $key => $value) {
+        // Start from .env.example so all variables are present
+        if (file_exists($examplePath)) {
+            $content = file_get_contents($examplePath);
+        } elseif (file_exists($envPath)) {
+            $content = file_get_contents($envPath);
+        } else {
+            $content = '';
+        }
+
+        foreach ($overrides as $key => $value) {
             $escaped = $this->escapeEnvValue((string) $value);
 
             if (preg_match("/^{$key}=.*$/m", $content)) {
@@ -115,14 +147,12 @@ class SetupController extends Controller
     }
 
     /**
-     * Quote a value for .env if it contains whitespace or special characters.
+     * Quote a .env value if it contains whitespace or shell-special characters.
      */
     private function escapeEnvValue(string $value): string
     {
-        // If value has spaces, #, or $, wrap in double quotes and escape inner quotes
         if (preg_match('/[\s#$"\'\\\\]/', $value)) {
-            $escaped = str_replace('"', '\\"', $value);
-            return '"' . $escaped . '"';
+            return '"' . str_replace('"', '\\"', $value) . '"';
         }
 
         return $value;
