@@ -104,8 +104,6 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'throttle:api'])->group(functio
         ->name('pedidos.convertir');
 
     // ── Configuración ────────────────────────────────────────────────────────
-    Route::get('configuracion/empresa',  [ConfiguracionController::class, 'getEmpresa'])->name('config.empresa.get');
-    Route::put('configuracion/empresa',  [ConfiguracionController::class, 'updateEmpresa'])->name('config.empresa.update');
-    Route::get('configuracion/fe',       [ConfiguracionController::class, 'getFE'])->name('config.fe.get');
-    Route::put('configuracion/fe',       [ConfiguracionController::class, 'updateFE'])->name('config.fe.update');
+    Route::get('configuracion/fe',  [ConfiguracionController::class, 'getFE'])->name('config.fe.get');
+    Route::put('configuracion/fe',  [ConfiguracionController::class, 'updateFE'])->name('config.fe.update');
 });
