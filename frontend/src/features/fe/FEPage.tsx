@@ -1,6 +1,7 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation } from '@tanstack/react-query'
-import { Zap, Send, RefreshCw, CheckCircle, XCircle, Clock, AlertTriangle, FileX, FileMinus, X } from 'lucide-react'
+import { Zap, Send, RefreshCw, CheckCircle, XCircle, Clock, AlertTriangle, FileX, FileMinus, X, Printer } from 'lucide-react'
 import { api } from '@/lib/axios'
 import { queryClient } from '@/lib/queryClient'
 import { Badge } from '@/components/ui/Badge'
@@ -175,6 +176,7 @@ function estadoBadge(estado: string | null) {
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 export function FEPage() {
+  const navigate = useNavigate()
   const [toast,  setToast]  = useState<{ type: 'success' | 'error'; message: string } | null>(null)
   const [filter, setFilter] = useState<string>('PENDIENTE')
   const [notaModal, setNotaModal] = useState<{ doc: FEDocumento; tipo: TipoNota } | null>(null)
@@ -322,44 +324,59 @@ export function FEPage() {
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center justify-center gap-1.5 flex-wrap">
-                      {/* Enviar / Reenviar */}
-                      {(doc.FE_ESTADO === null || doc.FE_ESTADO === 'PENDIENTE') && (
-                        <Button size="sm" onClick={() => enviarMutation.mutate(doc.CONTROLMAESTRO)}
-                          loading={enviarMutation.isPending && enviarMutation.variables === doc.CONTROLMAESTRO}>
-                          <Send className="h-3.5 w-3.5 mr-1" /> Enviar
-                        </Button>
-                      )}
-                      {doc.FE_ESTADO === 'RECHAZADO' && (
-                        <Button size="sm" variant="secondary"
-                          onClick={() => reenviarMutation.mutate(doc.CONTROLMAESTRO)}
-                          loading={reenviarMutation.isPending && reenviarMutation.variables === doc.CONTROLMAESTRO}>
-                          <RefreshCw className="h-3.5 w-3.5 mr-1" /> Reenviar
-                        </Button>
-                      )}
-                      {doc.FE_ESTADO === 'RECHAZADO' && doc.FE_MENSAJE && (
-                        <div className="flex items-center gap-1 text-red-400 text-xs">
-                          <AlertTriangle className="h-3.5 w-3.5" />
-                          <span title={doc.FE_MENSAJE}>Ver error</span>
-                        </div>
-                      )}
-
-                      {/* Nota de Crédito / Débito — solo documentos ACEPTADO */}
-                      {doc.FE_ESTADO === 'ACEPTADO' && (
+                      {doc.URLCONSULTAFEL ? (
+                        /* Con CUFE: imprimir ticket/A4 según config FELINNOVA */
                         <>
                           <button
-                            onClick={() => setNotaModal({ doc, tipo: 'credito' })}
-                            title="Emitir Nota de Crédito"
-                            className="flex items-center gap-1 rounded px-2 py-1 text-xs text-orange-400 border border-orange-800 hover:bg-orange-900/30 transition-colors"
+                            title="Imprimir / Vista previa"
+                            onClick={() => navigate(`/facturas/${btoa(doc.CONTROLMAESTRO)}/recibo`)}
+                            className="flex items-center gap-1 rounded px-2 py-1 text-xs text-green-400 border border-green-800 hover:bg-green-900/30 transition-colors"
                           >
-                            <FileMinus className="h-3.5 w-3.5" /> N/C
+                            <Printer className="h-3.5 w-3.5" /> Imprimir
                           </button>
-                          <button
-                            onClick={() => setNotaModal({ doc, tipo: 'debito' })}
-                            title="Emitir Nota de Débito"
-                            className="flex items-center gap-1 rounded px-2 py-1 text-xs text-orange-400 border border-orange-800 hover:bg-orange-900/30 transition-colors"
-                          >
-                            <FileX className="h-3.5 w-3.5" /> N/D
-                          </button>
+
+                          {/* Nota de Crédito / Débito — solo ACEPTADO */}
+                          {doc.FE_ESTADO === 'ACEPTADO' && (
+                            <>
+                              <button
+                                onClick={() => setNotaModal({ doc, tipo: 'credito' })}
+                                title="Emitir Nota de Crédito"
+                                className="flex items-center gap-1 rounded px-2 py-1 text-xs text-orange-400 border border-orange-800 hover:bg-orange-900/30 transition-colors"
+                              >
+                                <FileMinus className="h-3.5 w-3.5" /> N/C
+                              </button>
+                              <button
+                                onClick={() => setNotaModal({ doc, tipo: 'debito' })}
+                                title="Emitir Nota de Débito"
+                                className="flex items-center gap-1 rounded px-2 py-1 text-xs text-orange-400 border border-orange-800 hover:bg-orange-900/30 transition-colors"
+                              >
+                                <FileX className="h-3.5 w-3.5" /> N/D
+                              </button>
+                            </>
+                          )}
+                        </>
+                      ) : (
+                        /* Sin CUFE: enviar o reenviar el documento electrónico */
+                        <>
+                          {(doc.FE_ESTADO === null || doc.FE_ESTADO === 'PENDIENTE') && (
+                            <Button size="sm" onClick={() => enviarMutation.mutate(doc.CONTROLMAESTRO)}
+                              loading={enviarMutation.isPending && enviarMutation.variables === doc.CONTROLMAESTRO}>
+                              <Send className="h-3.5 w-3.5 mr-1" /> Enviar
+                            </Button>
+                          )}
+                          {doc.FE_ESTADO === 'RECHAZADO' && (
+                            <Button size="sm" variant="secondary"
+                              onClick={() => reenviarMutation.mutate(doc.CONTROLMAESTRO)}
+                              loading={reenviarMutation.isPending && reenviarMutation.variables === doc.CONTROLMAESTRO}>
+                              <RefreshCw className="h-3.5 w-3.5 mr-1" /> Reenviar
+                            </Button>
+                          )}
+                          {doc.FE_ESTADO === 'RECHAZADO' && doc.FE_MENSAJE && (
+                            <div className="flex items-center gap-1 text-red-400 text-xs">
+                              <AlertTriangle className="h-3.5 w-3.5" />
+                              <span title={doc.FE_MENSAJE}>Ver error</span>
+                            </div>
+                          )}
                         </>
                       )}
                     </div>
