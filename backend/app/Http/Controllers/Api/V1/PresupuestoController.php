@@ -98,7 +98,7 @@ class PresupuestoController extends Controller
             $numref  = str_pad((string) ((int) ($empresa->NROINIPRE ?? 1)), 10, '0', STR_PAD_LEFT);
             [$dias, $hora, $ale] = $this->cadena->componentes();
             $control  = "{$dias}{$hora}{$ale}PR";
-            $fecemis  = (int) now('America/Panama')->format('Ymd');
+            $fecemis  = $this->cadena->fechaClarion();
             $fecemiss = now('America/Panama')->format('Ymd');
 
             $montoBru = 0.0; $montoImp = 0.0;
@@ -270,7 +270,7 @@ class PresupuestoController extends Controller
             $erpUser   = $this->getErpUserData($request->user()->erp_coduser ?? '');
             $codven    = $pres->CODVEN ?? $erpUser['codven'];
             $codAlm    = $erpUser['codalmacen'];
-            $fecemis   = (int) now('America/Panama')->format('Ymd');
+            $fecemis   = $this->cadena->fechaClarion();
             $fecemiss  = now('America/Panama')->format('Ymd');
             $coduser   = $request->user()->erp_coduser ?? '';
 

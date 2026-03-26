@@ -130,7 +130,7 @@ class CobroController extends Controller
                          :total,:tar,:che,:ints1,:efe)",
                 [
                     'ctrl' => $controlCobro, 'numref' => $factura->NUMREF,
-                    'cod' => $factura->CODIGO, 'fecemis' => (int) now('America/Panama')->format('Ymd'),
+                    'cod' => $factura->CODIGO, 'fecemis' => $this->cadena->fechaClarion(),
                     'nroPago' => $nroPago,
                     'total' => $monto, 'tar' => $montoTar, 'che' => $montoChe,
                     'ints1' => $montoInts1, 'efe' => $montoEfe,

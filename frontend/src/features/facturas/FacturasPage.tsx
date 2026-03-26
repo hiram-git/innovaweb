@@ -224,7 +224,9 @@ export function FacturasPage() {
                       <td className="px-4 py-3 font-mono text-orange-400">{f.NROFAC}</td>
                       <td className="px-4 py-3 text-white max-w-[200px] truncate">{f.NOMCLIENTE}</td>
                       <td className="px-4 py-3 text-slate-400">
-                        {f.FECHA ? new Date(f.FECHA).toLocaleDateString('es-PA') : '—'}
+                        {f.FECHA && f.FECHA.length === 8
+                          ? `${f.FECHA.slice(6, 8)}/${f.FECHA.slice(4, 6)}/${f.FECHA.slice(0, 4)}`
+                          : '—'}
                       </td>
                       <td className="px-4 py-3 text-right text-white font-medium">
                         ${Number(f.MONTOTOT ?? 0).toFixed(2)}
@@ -264,8 +266,8 @@ export function FacturasPage() {
                               : <Printer className="h-4 w-4" />
                             }
                           </button>
-                          {/* PDF DGI (solo si tiene CUFE) */}
-                          {f.CUFE && (
+                          {/* PDF DGI (solo si tiene URLCONSULTAFEL) */}
+                          {f.URLCONSULTAFEL && (
                             <button
                               title="Descargar PDF DGI"
                               disabled={acting}
@@ -278,8 +280,8 @@ export function FacturasPage() {
                               }
                             </button>
                           )}
-                          {/* Anular (solo sin CUFE ni saldo) */}
-                          {!f.CUFE && Number(f.MONTOSAL ?? 0) === 0 && (
+                          {/* Anular (solo sin FE emitida ni saldo) */}
+                          {!f.URLCONSULTAFEL && Number(f.MONTOSAL ?? 0) === 0 && (
                             <button
                               title="Anular factura"
                               disabled={acting}

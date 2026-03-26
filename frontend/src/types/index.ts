@@ -99,18 +99,21 @@ export interface FormaPago {
 }
 
 export interface FacturaMaestro {
-  CONTROLMAESTRO: string
-  NROFAC:         string | null
-  NOMCLIENTE:     string | null
-  FECHA:          string | null
-  TIPTRAN:        string | null
-  MONTOTOT:       number | null
-  MONTOSAL:       number | null
-  MONTOIMP:       number | null
-  FE_ESTADO:      string | null
-  FE_MENSAJE:     string | null
-  CUFE:           string | null
-  INTEGRADO:      number | null
+  CONTROLMAESTRO:    string
+  NROFAC:            string | null
+  NOMCLIENTE:        string | null
+  FECHA:             string | null   // FECEMISS — YYYYMMDD string
+  TIPTRAN:           string | null
+  MONTOTOT:          number | null
+  MONTOSAL:          number | null
+  MONTOIMP:          number | null
+  FE_ESTADO:         string | null
+  FE_MENSAJE:        string | null
+  URLCONSULTAFEL:    string | null   // CUFE/QR URL en TRANSACCMAESTRO
+  FECHA_CER:         string | null
+  PROTO_AUTORIZACION: string | null
+  CUFE:              string | null   // compatibilidad con show/ticket endpoints
+  INTEGRADO:         number | null
 }
 
 export interface FacturaDetalle {
