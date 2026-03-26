@@ -103,8 +103,8 @@ class InventarioController extends Controller
         $precioCol = $this->precioCol();
 
         $rows = DB::select(
-            "SELECT ic.CODPRO_COMP                                         AS CODPRO,
-                    ISNULL(inv.DESCRIP1, ic.CODPRO_COMP)                   AS DESCRIP1,
+            "SELECT ic.CODPROPRO                                           AS CODPRO,
+                    ISNULL(inv.DESCRIP1, ic.CODPROPRO)                     AS DESCRIP1,
                     ISNULL(ic.CANTIDAD, 1)                                 AS CANTIDAD,
                     ISNULL(inv.{$precioCol}, 0)                            AS PRECVEN1,
                     ISNULL(inv.EXISTENCIA,0)
@@ -114,9 +114,9 @@ class InventarioController extends Controller
                     ISNULL(inv.IMPPOR,0)                                   AS IMPPOR,
                     ISNULL(inv.EXENTO,0)                                   AS EXENTO
              FROM INVENTARIOCOMPONENTES ic
-             LEFT JOIN INVENTARIO inv ON inv.CODPRO = ic.CODPRO_COMP
+             LEFT JOIN INVENTARIO inv ON inv.CODPRO = ic.CODPROPRO
              WHERE ic.CODPRO = ?
-             ORDER BY ic.CODPRO_COMP",
+             ORDER BY ic.CODPROPRO",
             [trim($codigo)]
         );
 
