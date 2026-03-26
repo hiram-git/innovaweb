@@ -71,6 +71,9 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'throttle:api'])->group(functio
     Route::get('inventario/{codigo}/disponibilidad', [InventarioController::class, 'disponibilidad'])
         ->middleware('cache.headers:30')
         ->name('inventario.disponibilidad');
+    Route::get('inventario/{codigo}/componentes', [InventarioController::class, 'componentes'])
+        ->middleware('cache.headers:60')
+        ->name('inventario.componentes');
 
     // ── Facturas ─────────────────────────────────────────────────────────────
     Route::apiResource('facturas', FacturaController::class);
