@@ -51,13 +51,14 @@ class FacturaController extends Controller
 
         $facturas = DB::select(
             "SELECT m.CONTROL AS CONTROLMAESTRO, m.NUMREF AS NROFAC, m.CODIGO AS CODCLIENTE,
-                m.NOMBRE AS NOMCLIENTE, m.FECEMIS AS FECHA, m.TIPOFACTURA AS TIPTRAN,
+                m.NOMBRE AS NOMCLIENTE, m.FECEMISS AS FECHA, m.TIPOFACTURA AS TIPTRAN,
                 m.MONTOBRU, m.MONTOIMP, m.MONTODES, m.MONTOTOT, m.MONTOSAL,
-                d.CUFE, d.RESULTADO AS FE_ESTADO, d.MENSAJE AS FE_MENSAJE
+                m.URLCONSULTAFEL, m.FECHA_CER, m.PROTO_AUTORIZACION,
+                d.RESULTADO AS FE_ESTADO, d.MENSAJE AS FE_MENSAJE
              FROM TRANSACCMAESTRO m
              LEFT JOIN Documentos d ON d.CONTROL = m.CONTROL
              WHERE {$whereStr}
-             ORDER BY m.FECEMIS DESC
+             ORDER BY m.FECEMISS DESC
              OFFSET :offset ROWS FETCH NEXT :limit ROWS ONLY", $params
         );
 
@@ -158,7 +159,7 @@ class FacturaController extends Controller
 
             [$dias, $hora, $ale] = $this->cadena->componentes();
             $controlMaestro = "{$dias}{$hora}{$ale}01";
-            $fecemis  = (int) now('America/Panama')->format('Ymd');
+            $fecemis  = $this->cadena->fechaClarion();
             $fecemiss = now('America/Panama')->format('Ymd');
             $fecVenc  = (int) now('America/Panama')->addDays($diasVenc)->format('Ymd');
 

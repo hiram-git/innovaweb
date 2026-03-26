@@ -41,7 +41,11 @@ class CadenaControlService
      * Genera solo los componentes base (sin sufijo)
      * Útil cuando se necesitan múltiples claves con el mismo base
      *
-     * @return array{dias: int, hora: string, aleatorio: int}
+     * Lógica idéntica a cadena_control() del legacy (grabar_factura.php):
+     *   $hora_actual = (H*360000) + (i*6000) + (s*100) + (v/10) + 1
+     *   $aleatorio   = str_pad(floor(microsegundos / 10), 5, '0', STR_PAD_LEFT)
+     *
+     * @return array{0: int, 1: string, 2: string}  [dias, horaClarion7, aleatorio5]
      */
     public function componentes(): array
     {
@@ -50,20 +54,23 @@ class CadenaControlService
         $diff   = $epoch->diff($ahora);
         $dias   = $diff->days;
 
-        // Hora en formato Clarion: centisegundos del día (7 dígitos)
-        $hora   = (int) date('H') * 360000
-                + (int) date('i') * 6000
-                + (int) date('s') * 100
-                + (int) (round(microtime(true) * 1000) % 1000) / 10;
+        // Hora Clarion: centisegundos del día con +1 (exacto al legacy)
+        $hora = (int) date('H') * 360000
+              + (int) date('i') * 6000
+              + (int) date('s') * 100
+              + (int) ((int) date('v') / 10)
+              + 1;
 
-        $horaClarion = str_pad(
-            (string) (int) $hora,
-            7,
+        $horaClarion = str_pad((string) $hora, 7, '0', STR_PAD_LEFT);
+
+        // Aleatorio: microsegundos actuales ÷ 10, con padding a 5 dígitos
+        $ts        = \DateTime::createFromFormat('U.u', sprintf('%.6F', microtime(true)));
+        $aleatorio = str_pad(
+            (string) (int) floor((int) $ts->format('u') / 10),
+            5,
             '0',
             STR_PAD_LEFT
         );
-
-        $aleatorio = mt_rand(10000, 99999);
 
         return [$dias, $horaClarion, $aleatorio];
     }
