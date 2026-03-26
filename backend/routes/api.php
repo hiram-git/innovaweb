@@ -77,9 +77,10 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'throttle:api'])->group(functio
 
     // ── Facturas ─────────────────────────────────────────────────────────────
     Route::apiResource('facturas', FacturaController::class);
-    Route::get('facturas/{id}/pdf',    [FacturaController::class, 'pdf'])->name('facturas.pdf');
-    Route::get('facturas/{id}/ticket', [FacturaController::class, 'ticket'])->name('facturas.ticket');
-    Route::get('facturas/{id}/recibo', [FacturaController::class, 'recibo'])->name('facturas.recibo');
+    Route::get('facturas/{id}/pdf',        [FacturaController::class, 'pdf'])->name('facturas.pdf');
+    Route::get('facturas/{id}/ticket',     [FacturaController::class, 'ticket'])->name('facturas.ticket');
+    Route::get('facturas/{id}/recibo',     [FacturaController::class, 'recibo'])->name('facturas.recibo');
+    Route::get('facturas/{id}/ticket-pdf', [FacturaController::class, 'ticketPdf'])->name('facturas.ticket-pdf');
 
     // ── Facturación Electrónica (DGI Panamá) ─────────────────────────────────
     // Rutas con prefijo /facturacion-electronica (alineadas con el frontend React)
@@ -106,13 +107,15 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'throttle:api'])->group(functio
     Route::apiResource('presupuestos', PresupuestoController::class);
     Route::post('presupuestos/{id}/convertir-a-factura', [PresupuestoController::class, 'convertirAFactura'])
         ->name('presupuestos.convertir');
-    Route::get('presupuestos/{id}/recibo', [PresupuestoController::class, 'recibo'])->name('presupuestos.recibo');
+    Route::get('presupuestos/{id}/recibo',     [PresupuestoController::class, 'recibo'])->name('presupuestos.recibo');
+    Route::get('presupuestos/{id}/ticket-pdf', [PresupuestoController::class, 'ticketPdf'])->name('presupuestos.ticket-pdf');
 
     // ── Pedidos (reserva inventario, TIPTRAN='PEDxCLI') ─────────────────────
     Route::apiResource('pedidos', PedidoController::class)->only(['index', 'show', 'store', 'destroy']);
     Route::post('pedidos/{id}/convertir-a-factura', [PedidoController::class, 'convertirAFactura'])
         ->name('pedidos.convertir');
-    Route::get('pedidos/{id}/recibo', [PedidoController::class, 'recibo'])->name('pedidos.recibo');
+    Route::get('pedidos/{id}/recibo',     [PedidoController::class, 'recibo'])->name('pedidos.recibo');
+    Route::get('pedidos/{id}/ticket-pdf', [PedidoController::class, 'ticketPdf'])->name('pedidos.ticket-pdf');
 
     // ── Configuración ────────────────────────────────────────────────────────
     Route::get('configuracion/fe',  [ConfiguracionController::class, 'getFE'])->name('config.fe.get');

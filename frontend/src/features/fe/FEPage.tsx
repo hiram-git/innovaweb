@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation } from '@tanstack/react-query'
 import { Zap, Send, RefreshCw, CheckCircle, XCircle, Clock, AlertTriangle, FileX, FileMinus, X, Printer } from 'lucide-react'
 import { api } from '@/lib/axios'
@@ -175,8 +174,13 @@ function estadoBadge(estado: string | null) {
 
 // ─── Main page ────────────────────────────────────────────────────────────────
 
+function openPdfBlob(blob: Blob) {
+  const url = URL.createObjectURL(blob)
+  window.open(url, '_blank')
+  setTimeout(() => URL.revokeObjectURL(url), 60_000)
+}
+
 export function FEPage() {
-  const navigate = useNavigate()
   const [toast,  setToast]  = useState<{ type: 'success' | 'error'; message: string } | null>(null)
   const [filter, setFilter] = useState<string>('PENDIENTE')
   const [notaModal, setNotaModal] = useState<{ doc: FEDocumento; tipo: TipoNota } | null>(null)
@@ -219,6 +223,16 @@ export function FEPage() {
     },
     onError: (err: unknown) => {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Error al reenviar'
+      setToast({ type: 'error', message: msg })
+    },
+  })
+
+  const imprimirMutation = useMutation({
+    mutationFn: (controlmaestro: string) =>
+      api.get(`/facturas/${btoa(controlmaestro)}/ticket-pdf`, { responseType: 'blob' }).then(r => r.data as Blob),
+    onSuccess: (blob) => openPdfBlob(blob),
+    onError: (err: unknown) => {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Error al generar ticket'
       setToast({ type: 'error', message: msg })
     },
   })
@@ -325,14 +339,16 @@ export function FEPage() {
                   <td className="px-4 py-3">
                     <div className="flex items-center justify-center gap-1.5 flex-wrap">
                       {doc.URLCONSULTAFEL ? (
-                        /* Con CUFE: imprimir ticket/A4 según config FELINNOVA */
+                        /* Con CUFE: generar ticket TCPDF */
                         <>
                           <button
-                            title="Imprimir / Vista previa"
-                            onClick={() => navigate(`/facturas/${btoa(doc.CONTROLMAESTRO)}/recibo`)}
-                            className="flex items-center gap-1 rounded px-2 py-1 text-xs text-green-400 border border-green-800 hover:bg-green-900/30 transition-colors"
+                            title="Imprimir ticket"
+                            disabled={imprimirMutation.isPending && imprimirMutation.variables === doc.CONTROLMAESTRO}
+                            onClick={() => imprimirMutation.mutate(doc.CONTROLMAESTRO)}
+                            className="flex items-center gap-1 rounded px-2 py-1 text-xs text-green-400 border border-green-800 hover:bg-green-900/30 disabled:opacity-40 transition-colors"
                           >
-                            <Printer className="h-3.5 w-3.5" /> Imprimir
+                            <Printer className="h-3.5 w-3.5" />
+                            {imprimirMutation.isPending && imprimirMutation.variables === doc.CONTROLMAESTRO ? 'Generando…' : 'Imprimir'}
                           </button>
 
                           {/* Nota de Crédito / Débito — solo ACEPTADO */}
