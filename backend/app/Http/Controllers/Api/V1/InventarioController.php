@@ -31,33 +31,36 @@ class InventarioController extends Controller
             'q4' => $like, 'q5' => $like, 'q6' => $like,
         ];
 
-        $where = "ACTIVO = 0
-              AND (  CODPRO  LIKE :q
-                  OR CODREF  LIKE :q2
-                  OR CODREF2 LIKE :q3
-                  OR CODREF3 LIKE :q4
-                  OR DESCRIP1 LIKE :q5
-                  OR DESCRIP2 LIKE :q6)";
+        $where = "inv.ACTIVO = 0
+              AND (  inv.CODPRO  LIKE :q
+                  OR inv.CODREF  LIKE :q2
+                  OR inv.CODREF2 LIKE :q3
+                  OR inv.CODREF3 LIKE :q4
+                  OR inv.DESCRIP1 LIKE :q5
+                  OR inv.DESCRIP2 LIKE :q6)";
 
         $count = DB::selectOne(
-            "SELECT COUNT(*) AS total FROM INVENTARIO WHERE {$where}",
+            "SELECT COUNT(*) AS total FROM INVENTARIO inv WHERE {$where}",
             $binds
         );
         $total = $count?->total ?? 0;
 
         $items = DB::select(
-            "SELECT CODPRO, DESCRIP1, DESCRIP2,
-                    ISNULL(EXISTENCIA,0)    AS EXISTENCIA,
-                    ISNULL(CANRESERVADA,0)  AS CANRESERVADA,
-                    ISNULL(CANVEN,0)        AS CANVEN,
-                    ISNULL({$precioCol},0)  AS PRECVEN1,
-                    ISNULL(IMPPOR,0)        AS IMPPOR,
-                    ISNULL(PROCOMPUESTO,0)  AS PROCOMPUESTO,
-                    TIPINV,
-                    ISNULL(EXENTO,0)        AS EXENTO
-             FROM INVENTARIO
+            "SELECT inv.CODPRO, inv.DESCRIP1, inv.DESCRIP2,
+                    ISNULL(inv.EXISTENCIA,0)    AS EXISTENCIA,
+                    ISNULL(inv.CANRESERVADA,0)  AS CANRESERVADA,
+                    ISNULL(inv.CANVEN,0)        AS CANVEN,
+                    ISNULL(inv.{$precioCol},0)  AS PRECVEN1,
+                    ISNULL(inv.IMPPOR,0)        AS IMPPOR,
+                    ISNULL(inv.PROCOMPUESTO,0)  AS PROCOMPUESTO,
+                    inv.TIPINV,
+                    ISNULL(inv.EXENTO,0)        AS EXENTO,
+                    ISNULL(emp.CANTIDAD_EMP,0)  AS CANTIDAD_EMP,
+                    ISNULL(emp.PRECIO_EMPAQUE,0) AS PRECIO_EMPAQUE
+             FROM INVENTARIO inv
+             LEFT JOIN INVENTARIOEMPAQUESV emp ON emp.CODPRO = inv.CODPRO
              WHERE {$where}
-             ORDER BY DESCRIP1
+             ORDER BY inv.DESCRIP1
              OFFSET :offset ROWS FETCH NEXT :limit ROWS ONLY",
             array_merge($binds, ['offset' => $offset, 'limit' => $perPage])
         );
@@ -89,5 +92,34 @@ class InventarioController extends Controller
         );
         if (! $item) return response()->json(['message' => 'Producto no encontrado.'], 404);
         return response()->json(['data' => ['disponible' => (float)$item->EXISTENCIA - (float)$item->CANRESERVADA]]);
+    }
+
+    /**
+     * Return components of a composite product (PROCOMPUESTO=1).
+     * Mirrors ajax/mostrarComponentes.php.
+     */
+    public function componentes(string $codigo): JsonResponse
+    {
+        $precioCol = $this->precioCol();
+
+        $rows = DB::select(
+            "SELECT ic.CODPRO_COMP                                         AS CODPRO,
+                    ISNULL(inv.DESCRIP1, ic.CODPRO_COMP)                   AS DESCRIP1,
+                    ISNULL(ic.CANTIDAD, 1)                                 AS CANTIDAD,
+                    ISNULL(inv.{$precioCol}, 0)                            AS PRECVEN1,
+                    ISNULL(inv.EXISTENCIA,0)
+                        - ISNULL(inv.CANRESERVADA,0)
+                        - ISNULL(inv.CANVEN,0)                             AS disponible,
+                    ISNULL(inv.TIPINV,'')                                  AS TIPINV,
+                    ISNULL(inv.IMPPOR,0)                                   AS IMPPOR,
+                    ISNULL(inv.EXENTO,0)                                   AS EXENTO
+             FROM INVENTARIOCOMPONENTES ic
+             LEFT JOIN INVENTARIO inv ON inv.CODPRO = ic.CODPRO_COMP
+             WHERE ic.CODPRO = ?
+             ORDER BY ic.CODPRO_COMP",
+            [trim($codigo)]
+        );
+
+        return response()->json(['data' => $rows]);
     }
 }

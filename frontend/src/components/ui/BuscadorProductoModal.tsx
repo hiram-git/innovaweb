@@ -15,7 +15,7 @@
  */
 import { useState, useEffect, useRef } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Search, ArrowLeft, Package, X, AlertTriangle, CheckCircle } from 'lucide-react'
+import { Search, ArrowLeft, Package, X, AlertTriangle, CheckCircle, Layers, ShoppingCart } from 'lucide-react'
 import { api } from '@/lib/axios'
 import { Button } from './Button'
 import type { ItemFactura } from '@/types'
@@ -23,15 +23,28 @@ import type { ItemFactura } from '@/types'
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
 interface ProductoBusqueda {
-  CODPRO:       string
-  DESCRIP1:     string
-  PRECVEN1:     number | null
-  EXISTENCIA:   number | null
-  CANRESERVADA: number | null
-  CANVEN:       number | null
-  PROCOMPUESTO: number | null
-  TIPINV:       string | null
-  IMPPOR:       number | null
+  CODPRO:         string
+  DESCRIP1:       string
+  PRECVEN1:       number | null
+  EXISTENCIA:     number | null
+  CANRESERVADA:   number | null
+  CANVEN:         number | null
+  PROCOMPUESTO:   number | null
+  TIPINV:         string | null
+  IMPPOR:         number | null
+  EXENTO:         number | null
+  CANTIDAD_EMP:   number | null
+  PRECIO_EMPAQUE: number | null
+}
+
+interface Componente {
+  CODPRO:    string
+  DESCRIP1:  string
+  CANTIDAD:  number
+  PRECVEN1:  number
+  disponible: number
+  TIPINV:    string
+  IMPPOR:    number
 }
 
 const ITBMS_RATES = [0, 7, 10, 15] as const
@@ -59,6 +72,10 @@ function isCompuesto(p: ProductoBusqueda): boolean {
   return (p.PROCOMPUESTO ?? 0) == 1
 }
 
+function tieneEmpaque(p: ProductoBusqueda): boolean {
+  return (p.CANTIDAD_EMP ?? 0) > 0
+}
+
 function puedeSeleccionar(
   p: ProductoBusqueda,
   modo: BuscadorProductoModalProps['modo'],
@@ -69,6 +86,97 @@ function puedeSeleccionar(
   // mirrors buscar_prod.php logic
   return isServicio(p) || isCompuesto(p) || getDisponible(p) > 0
       || ventamenos === 1 || actfacexi === 1
+}
+
+// ─── Sub-modal: componentes de un producto compuesto ─────────────────────────
+
+function ComponentesModal({
+  codpro,
+  descrip,
+  onClose,
+  onSelectComponente,
+}: {
+  codpro:               string
+  descrip:              string
+  onClose:              () => void
+  onSelectComponente:   (c: Componente) => void
+}) {
+  const { data, isLoading } = useQuery({
+    queryKey: ['componentes', codpro],
+    queryFn: () =>
+      api.get<{ data: Componente[] }>(`/inventario/${encodeURIComponent(codpro)}/componentes`)
+        .then(r => r.data.data),
+    staleTime: 60_000,
+  })
+
+  return (
+    <>
+      <div className="fixed inset-0 bg-black/80 z-60" onClick={onClose} />
+      <div className="fixed inset-0 z-70 flex items-center justify-center p-4">
+        <div className="w-full max-w-2xl max-h-[80vh] flex flex-col rounded-2xl border border-slate-700 bg-slate-900 shadow-2xl overflow-hidden">
+
+          {/* Header */}
+          <div className="flex items-center gap-3 px-4 pt-4 pb-3 border-b border-slate-800 shrink-0">
+            <button onClick={onClose} className="p-1.5 rounded-md text-slate-400 hover:text-white hover:bg-slate-800">
+              <X className="h-5 w-5" />
+            </button>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs text-slate-400">Componentes de producto compuesto</p>
+              <p className="text-sm font-medium text-white truncate">{descrip}</p>
+            </div>
+          </div>
+
+          {/* Body */}
+          <div className="flex-1 overflow-y-auto">
+            {isLoading ? (
+              <div className="flex justify-center py-12">
+                <div className="h-6 w-6 animate-spin rounded-full border-2 border-slate-600 border-t-orange-500" />
+              </div>
+            ) : !data?.length ? (
+              <div className="py-12 text-center text-slate-500 text-sm">
+                Este producto no tiene componentes registrados.
+              </div>
+            ) : (
+              <table className="w-full text-sm">
+                <thead className="text-xs text-slate-400 border-b border-slate-800 sticky top-0 bg-slate-900">
+                  <tr>
+                    <th className="px-4 py-2 text-left">Código</th>
+                    <th className="px-4 py-2 text-left">Descripción</th>
+                    <th className="px-4 py-2 text-right">Cant.</th>
+                    <th className="px-4 py-2 text-right">Precio</th>
+                    <th className="px-4 py-2 text-right">Disp.</th>
+                    <th className="px-4 py-2"></th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-800">
+                  {data.map(c => (
+                    <tr key={c.CODPRO} className="text-white hover:bg-slate-800/50">
+                      <td className="px-4 py-2 font-mono text-xs text-orange-400">{c.CODPRO}</td>
+                      <td className="px-4 py-2">{c.DESCRIP1}</td>
+                      <td className="px-4 py-2 text-right text-slate-300">{c.CANTIDAD}</td>
+                      <td className="px-4 py-2 text-right font-mono">${Number(c.PRECVEN1).toFixed(2)}</td>
+                      <td className={`px-4 py-2 text-right font-medium ${c.disponible > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                        {Math.round(c.disponible)}
+                      </td>
+                      <td className="px-4 py-2 text-right">
+                        <button
+                          type="button"
+                          onClick={() => onSelectComponente(c)}
+                          className="text-xs text-orange-400 hover:text-orange-300 px-2 py-0.5 rounded border border-orange-500/40 hover:border-orange-400"
+                        >
+                          Agregar
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </div>
+      </div>
+    </>
+  )
 }
 
 // ─── Componente principal ─────────────────────────────────────────────────────
@@ -84,6 +192,7 @@ export function BuscadorProductoModal({
   const [qty, setQty]         = useState<number>(1)
   const [precio, setPrecio]   = useState<number>(0)
   const [imppor, setImppor]   = useState<number>(7)
+  const [compuesto, setCompuesto] = useState<ProductoBusqueda | null>(null)
   const inputRef              = useRef<HTMLInputElement>(null)
 
   // Debounce
@@ -112,6 +221,29 @@ export function BuscadorProductoModal({
     setPrecio(Number(p.PRECVEN1 ?? 0))
     setImppor(Number(p.IMPPOR ?? 7))
     setPaso(2)
+  }
+
+  const handleSelectEmpaque = (p: ProductoBusqueda) => {
+    setProd(p)
+    setQty(Number(p.CANTIDAD_EMP ?? 1))
+    setPrecio(Number(p.PRECIO_EMPAQUE ?? p.PRECVEN1 ?? 0))
+    setImppor(Number(p.IMPPOR ?? 7))
+    setPaso(2)
+  }
+
+  // ── Componente seleccionado desde modal de componentes ────────────────────
+
+  const handleSelectComponente = (c: Componente) => {
+    setCompuesto(null)
+    onSelect({
+      codpro:    c.CODPRO,
+      descrip:   c.DESCRIP1,
+      cantidad:  c.CANTIDAD,
+      precio:    c.PRECVEN1,
+      descuento: 0,
+      imppor:    c.IMPPOR,
+    })
+    onClose()
   }
 
   // ── Paso 2: confirmar item ────────────────────────────────────────────────
@@ -182,16 +314,10 @@ export function BuscadorProductoModal({
                       const canSel = puedeSeleccionar(p, modo, ventamenos, actfacexi)
                       const esSrv  = isServicio(p)
                       const esCmp  = isCompuesto(p)
+                      const esEmp  = tieneEmpaque(p)
 
                       return (
-                        <button
-                          key={p.CODPRO}
-                          type="button"
-                          disabled={!canSel}
-                          onClick={() => handleSelectProd(p)}
-                          className={`w-full flex items-start gap-3 px-4 py-3 text-left transition-colors
-                            ${canSel ? 'hover:bg-slate-800 active:bg-slate-700' : 'opacity-40 cursor-not-allowed'}`}
-                        >
+                        <div key={p.CODPRO} className={`flex items-start gap-3 px-4 py-3 ${!canSel ? 'opacity-40' : ''}`}>
                           {/* Stock icon */}
                           <div className={`mt-0.5 shrink-0 h-8 w-8 rounded-full flex items-center justify-center
                             ${esSrv || esCmp ? 'bg-blue-900/40 text-blue-400'
@@ -206,7 +332,12 @@ export function BuscadorProductoModal({
                           </div>
 
                           {/* Info */}
-                          <div className="flex-1 min-w-0">
+                          <button
+                            type="button"
+                            disabled={!canSel}
+                            onClick={() => handleSelectProd(p)}
+                            className={`flex-1 min-w-0 text-left ${canSel ? 'cursor-pointer' : 'cursor-not-allowed'}`}
+                          >
                             <div className="flex items-baseline gap-2 flex-wrap">
                               <span className="font-mono text-xs text-orange-400">{p.CODPRO}</span>
                               {esCmp && (
@@ -214,6 +345,11 @@ export function BuscadorProductoModal({
                               )}
                               {esSrv && (
                                 <span className="text-xs bg-slate-700 text-slate-300 px-1.5 py-0.5 rounded">Servicio</span>
+                              )}
+                              {esEmp && (
+                                <span className="text-xs bg-amber-900/40 text-amber-300 px-1.5 py-0.5 rounded">
+                                  Empaque ×{p.CANTIDAD_EMP}
+                                </span>
                               )}
                             </div>
                             <p className="text-sm text-white font-medium mt-0.5 line-clamp-2">{p.DESCRIP1}</p>
@@ -229,16 +365,36 @@ export function BuscadorProductoModal({
                                 </>
                               )}
                             </div>
-                          </div>
+                          </button>
 
-                          {/* Price badge */}
-                          <div className="shrink-0 text-right">
+                          {/* Action buttons */}
+                          <div className="shrink-0 flex flex-col items-end gap-1.5">
                             <p className="text-orange-400 font-mono font-semibold text-sm">
                               ${Number(p.PRECVEN1 ?? 0).toFixed(2)}
                             </p>
                             <p className="text-xs text-slate-500">ITBMS {p.IMPPOR ?? 0}%</p>
+                            {esCmp && canSel && (
+                              <button
+                                type="button"
+                                onClick={e => { e.stopPropagation(); setCompuesto(p) }}
+                                className="flex items-center gap-1 text-xs text-blue-400 hover:text-blue-300 px-1.5 py-0.5 rounded border border-blue-500/40 hover:border-blue-400"
+                              >
+                                <Layers className="h-3 w-3" />
+                                Comp.
+                              </button>
+                            )}
+                            {esEmp && canSel && (
+                              <button
+                                type="button"
+                                onClick={e => { e.stopPropagation(); handleSelectEmpaque(p) }}
+                                className="flex items-center gap-1 text-xs text-amber-400 hover:text-amber-300 px-1.5 py-0.5 rounded border border-amber-500/40 hover:border-amber-400"
+                              >
+                                <ShoppingCart className="h-3 w-3" />
+                                Empaque
+                              </button>
+                            )}
                           </div>
-                        </button>
+                        </div>
                       )
                     })}
                   </div>
@@ -372,6 +528,16 @@ export function BuscadorProductoModal({
           )}
         </div>
       </div>
+
+      {/* Sub-modal componentes */}
+      {compuesto && (
+        <ComponentesModal
+          codpro={compuesto.CODPRO}
+          descrip={compuesto.DESCRIP1}
+          onClose={() => setCompuesto(null)}
+          onSelectComponente={handleSelectComponente}
+        />
+      )}
     </>
   )
 }
