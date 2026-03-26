@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 // TCPDF se carga desde la librería compartida del proyecto legacy
-require_once base_path('../../library/vendor/autoload.php');
+require_once base_path('../library/vendor/autoload.php');
 
 use TCPDF;
 
