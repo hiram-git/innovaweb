@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Services\CadenaControlService;
 use App\Traits\ErpInsert;
+use App\Traits\ReciboData;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -18,9 +19,19 @@ use Illuminate\Support\Facades\DB;
  */
 class PedidoController extends Controller
 {
-    use ErpInsert;
+    use ErpInsert, ReciboData;
 
     public function __construct(private readonly CadenaControlService $cadena) {}
+
+    public function recibo(string $id): JsonResponse
+    {
+        $control = base64_decode($id);
+        $data = $this->buildRecibo($control);
+        if (! $data || $data['maestro']?->TIPTRAN !== 'PEDxCLI') {
+            return response()->json(['message' => 'Pedido no encontrado.'], 404);
+        }
+        return response()->json(['data' => $data]);
+    }
 
     // ─────────────────────────────────────────────────────────────────────────
     // LISTADO
