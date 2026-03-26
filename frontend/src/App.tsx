@@ -17,6 +17,7 @@ import { PedidosPage } from '@/features/pedidos/PedidosPage'
 import { NuevaSolicitudPage } from '@/features/solicitudes/NuevaSolicitudPage'
 import { ConfiguracionPage } from '@/features/configuracion/ConfiguracionPage'
 import { SetupGuard } from '@/features/setup/SetupGuard'
+import { ReciboPage } from '@/features/recibo/ReciboPage'
 
 export default function App() {
   return (
@@ -32,13 +33,16 @@ export default function App() {
               <Route path="inventario" element={<InventarioPage />} />
               <Route path="facturas" element={<FacturasPage />} />
               <Route path="facturas/nueva" element={<NuevaFacturaPage />} />
+              <Route path="facturas/:id/recibo" element={<ReciboPage tipo="factura" />} />
               <Route path="facturacion-electronica" element={<FEPage />} />
               <Route path="ordenes-trabajo" element={<OTPage />} />
               <Route path="cobros" element={<CobrosPage />} />
               <Route path="presupuestos" element={<PresupuestosPage />} />
               <Route path="presupuestos/nuevo" element={<NuevaSolicitudPage tipo="presupuesto" />} />
+              <Route path="presupuestos/:id/recibo" element={<ReciboPage tipo="presupuesto" />} />
               <Route path="pedidos" element={<PedidosPage />} />
               <Route path="pedidos/nuevo" element={<NuevaSolicitudPage tipo="pedido" />} />
+              <Route path="pedidos/:id/recibo" element={<ReciboPage tipo="pedido" />} />
               <Route path="configuracion" element={<ConfiguracionPage />} />
             </Route>
           </Route>

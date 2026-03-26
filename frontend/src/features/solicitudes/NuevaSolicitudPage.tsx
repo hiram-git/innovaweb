@@ -58,8 +58,13 @@ export function NuevaSolicitudPage({ tipo }: Props) {
     mutationFn: (payload: object) => api.post(endpoint, payload).then(r => r.data),
     onSuccess: (res) => {
       queryClient.invalidateQueries({ queryKey: [tipo === 'presupuesto' ? 'presupuestos' : 'pedidos'] })
-      setToast({ type: 'success', message: `${label} ${res.numref ?? ''} creado exitosamente` })
-      setTimeout(() => navigate(backPath), 1500)
+      const id = res?.control
+      if (id) {
+        navigate(`${backPath}/${id}/recibo`)
+      } else {
+        setToast({ type: 'success', message: `${label} ${res.numref ?? ''} creado exitosamente` })
+        setTimeout(() => navigate(backPath), 1500)
+      }
     },
     onError: (err: unknown) => {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message

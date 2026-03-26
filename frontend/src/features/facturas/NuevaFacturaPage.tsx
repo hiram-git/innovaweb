@@ -151,11 +151,16 @@ export function NuevaFacturaPage() {
 
   const mutation = useMutation({
     mutationFn: (payload: NuevaFacturaPayload) => api.post('/facturas', payload).then(r => r.data),
-    onSuccess: () => {
+    onSuccess: (res) => {
       queryClient.invalidateQueries({ queryKey: ['facturas'] })
       reset()
-      setToast({ type: 'success', message: 'Factura creada exitosamente' })
-      setTimeout(() => navigate('/facturas'), 1500)
+      const id = res?.data?.CONTROLMAESTRO
+      if (id) {
+        navigate(`/facturas/${id}/recibo`)
+      } else {
+        setToast({ type: 'success', message: 'Factura creada exitosamente' })
+        setTimeout(() => navigate('/facturas'), 1500)
+      }
     },
     onError: (err: unknown) => {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Error al crear factura'

@@ -4,13 +4,24 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Services\CadenaControlService;
 use App\Traits\ErpInsert;
+use App\Traits\ReciboData;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class PresupuestoController extends Controller
 {
-    use ErpInsert;
+    use ErpInsert, ReciboData;
+
+    public function recibo(string $id): JsonResponse
+    {
+        $control = base64_decode($id);
+        $data = $this->buildRecibo($control);
+        if (! $data || $data['maestro']?->TIPTRAN !== 'PRE') {
+            return response()->json(['message' => 'Presupuesto no encontrado.'], 404);
+        }
+        return response()->json(['data' => $data]);
+    }
 
     public function __construct(private readonly CadenaControlService $cadena) {}
 
