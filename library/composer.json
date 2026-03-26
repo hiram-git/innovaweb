@@ -1,5 +1,15 @@
 {
+    "name": "innovaweb/library",
+    "description": "Librería compartida para el código legacy de InnovaWeb (TCPDF y otras dependencias)",
+    "type": "project",
+    "license": "proprietary",
     "require": {
+        "php": ">=7.4",
         "tecnickcom/tcpdf": "^6.6"
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "preferred-install": "dist",
+        "vendor-dir": "vendor"
     }
 }
