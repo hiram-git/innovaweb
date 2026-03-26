@@ -10,14 +10,16 @@ import { Input } from '@/components/ui/Input'
 import { Toast } from '@/components/ui/Toast'
 
 interface FEDocumento {
-  CONTROLMAESTRO: string
-  NROFAC:         string
-  NOMCLIENTE:     string
-  MONTOTOT:       number
-  FECHA:          string
-  FE_ESTADO:      string | null
-  CUFE:           string | null
-  FE_MENSAJE:     string | null
+  CONTROLMAESTRO:    string
+  NROFAC:            string
+  NOMCLIENTE:        string
+  MONTOTOT:          number
+  FECHA:             string   // FECEMISS — YYYYMMDD string
+  FE_ESTADO:         string | null
+  URLCONSULTAFEL:    string | null
+  FECHA_CER:         string | null
+  PROTO_AUTORIZACION: string | null
+  FE_MENSAJE:        string | null
 }
 
 interface FEStats {
@@ -287,7 +289,7 @@ export function FEPage() {
                 <th className="px-4 py-3 text-left">Fecha</th>
                 <th className="px-4 py-3 text-right">Total</th>
                 <th className="px-4 py-3 text-center">Estado</th>
-                <th className="px-4 py-3 text-left">CUFE</th>
+                <th className="px-4 py-3 text-left">Consulta DGI</th>
                 <th className="px-4 py-3 text-center">Acción</th>
               </tr>
             </thead>
@@ -297,13 +299,23 @@ export function FEPage() {
                   <td className="px-4 py-3 font-mono text-orange-400">{doc.NROFAC}</td>
                   <td className="px-4 py-3 text-white max-w-[160px] truncate">{doc.NOMCLIENTE}</td>
                   <td className="px-4 py-3 text-slate-400">
-                    {doc.FECHA ? new Date(doc.FECHA).toLocaleDateString('es-PA') : '—'}
+                    {doc.FECHA && doc.FECHA.length === 8
+                      ? `${doc.FECHA.slice(6, 8)}/${doc.FECHA.slice(4, 6)}/${doc.FECHA.slice(0, 4)}`
+                      : '—'}
                   </td>
                   <td className="px-4 py-3 text-right text-white">${Number(doc.MONTOTOT).toFixed(2)}</td>
                   <td className="px-4 py-3 text-center">{estadoBadge(doc.FE_ESTADO)}</td>
                   <td className="px-4 py-3 text-slate-400 max-w-[120px]">
-                    {doc.CUFE ? (
-                      <span className="font-mono text-xs truncate block" title={doc.CUFE}>{doc.CUFE.slice(0, 16)}…</span>
+                    {doc.URLCONSULTAFEL ? (
+                      <a
+                        href={doc.URLCONSULTAFEL}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="font-mono text-xs text-orange-400 hover:underline truncate block"
+                        title={doc.URLCONSULTAFEL}
+                      >
+                        Ver DGI
+                      </a>
                     ) : (
                       <span className="text-slate-600">—</span>
                     )}

@@ -221,7 +221,7 @@ class FEController extends Controller
              FROM TRANSACCMAESTRO m
              LEFT JOIN Documentos d ON d.CONTROL = m.CONTROL
              WHERE m.TIPTRAN = 'FAC'
-               AND m.FECEMIS >= CONVERT(INT, CONVERT(VARCHAR(8), DATEADD(month, -3, GETDATE()), 112))"
+               AND m.FECEMISS >= CONVERT(VARCHAR(8), DATEADD(month, -3, GETDATE()), 112)"
         );
 
         return response()->json([
@@ -260,12 +260,13 @@ class FEController extends Controller
 
         $docs = DB::select(
             "SELECT m.CONTROL AS CONTROLMAESTRO, m.NUMREF AS NROFAC,
-                m.NOMBRE AS NOMCLIENTE, m.FECEMIS AS FECHA, m.MONTOTOT,
-                d.CUFE, d.RESULTADO AS FE_ESTADO, d.MENSAJE AS FE_MENSAJE
+                m.NOMBRE AS NOMCLIENTE, m.FECEMISS AS FECHA, m.MONTOTOT,
+                m.URLCONSULTAFEL, m.FECHA_CER, m.PROTO_AUTORIZACION,
+                d.RESULTADO AS FE_ESTADO, d.MENSAJE AS FE_MENSAJE
              FROM TRANSACCMAESTRO m
              LEFT JOIN Documentos d ON d.CONTROL = m.CONTROL
              WHERE {$whereStr}
-             ORDER BY m.FECEMIS DESC
+             ORDER BY m.FECEMISS DESC
              OFFSET :offset ROWS FETCH NEXT :limit ROWS ONLY", $params
         );
 
