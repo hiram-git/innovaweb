@@ -33,65 +33,11 @@ function openBase64Pdf(b64: string, filename: string) {
   setTimeout(() => URL.revokeObjectURL(url), 60_000)
 }
 
-function openTicketWindow(data: {
-  maestro: Record<string, unknown>
-  detalles: Record<string, unknown>[]
-  qr: string | null
-}) {
-  const { maestro, detalles, qr } = data
-  const win = window.open('', '_blank', 'width=400,height=700')
-  if (!win) return
-  const rows = detalles.map(d =>
-    `<tr>
-       <td style="font-size:11px;padding:1px 0">${String(d.DESCRIP1 ?? '')}</td>
-       <td style="font-size:11px;text-align:right">${Number(d.CANTIDAD ?? 0).toFixed(2)}</td>
-       <td style="font-size:11px;text-align:right">${Number(d.PRECOSUNI ?? 0).toFixed(2)}</td>
-       <td style="font-size:11px;text-align:right">${Number(d.COSTOADU1 ?? 0).toFixed(2)}</td>
-     </tr>`
-  ).join('')
-  win.document.write(`<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8"/>
-  <title>Ticket ${String(maestro.NUMREF ?? '')}</title>
-  <style>
-    body { font-family: monospace; font-size: 12px; margin: 0; padding: 8px; width: 72mm; }
-    h2   { text-align: center; font-size: 13px; margin: 4px 0; }
-    p    { margin: 2px 0; font-size: 11px; }
-    hr   { border: none; border-top: 1px dashed #000; margin: 4px 0; }
-    table{ width: 100%; border-collapse: collapse; }
-    th   { font-size: 10px; text-align: left; border-bottom: 1px dashed #000; padding-bottom: 2px; }
-    .total { font-size: 13px; font-weight: bold; }
-    img  { display: block; margin: 4px auto; max-width: 120px; }
-    @media print { body { margin: 0; } button { display: none; } }
-  </style>
-</head>
-<body>
-  <h2>InnovaWeb</h2>
-  <hr/>
-  <p><b>Factura:</b> ${String(maestro.NUMREF ?? '')}</p>
-  <p><b>Cliente:</b> ${String(maestro.NOMBRE ?? '')}</p>
-  <p><b>Fecha:</b>   ${String(maestro.FECEMIS ?? '').slice(0, 10)}</p>
-  <hr/>
-  <table>
-    <thead>
-      <tr>
-        <th>Descripción</th><th style="text-align:right">Cant</th>
-        <th style="text-align:right">P.Unit</th><th style="text-align:right">Total</th>
-      </tr>
-    </thead>
-    <tbody>${rows}</tbody>
-  </table>
-  <hr/>
-  <p class="total" style="text-align:right">TOTAL: B/. ${Number(maestro.MONTOTOT ?? 0).toFixed(2)}</p>
-  <p style="text-align:right;font-size:11px">ITBMS: B/. ${Number(maestro.MONTOIMP ?? 0).toFixed(2)}</p>
-  ${qr ? `<hr/><img src="${qr}" alt="QR DGI"/>` : ''}
-  <hr/>
-  <p style="text-align:center;font-size:10px">Gracias por su compra</p>
-  <button onclick="window.print()" style="margin-top:8px;width:100%">🖨 Imprimir</button>
-</body>
-</html>`)
-  win.document.close()
+function openPdfBlob(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob)
+  const win = window.open(url, '_blank')
+  win?.document.title !== undefined && (win.document.title = filename)
+  setTimeout(() => URL.revokeObjectURL(url), 60_000)
 }
 
 export function FacturasPage() {
@@ -109,10 +55,11 @@ export function FacturasPage() {
     placeholderData: prev => prev,
   })
 
-  // Acción: imprimir ticket
+  // Acción: imprimir ticket via TCPDF
   const ticketMutation = useMutation({
-    mutationFn: (id: string) => api.get(`/facturas/${id}/ticket`).then(r => r.data.data),
-    onSuccess: (data) => openTicketWindow(data),
+    mutationFn: (id: string) =>
+      api.get(`/facturas/${id}/ticket-pdf`, { responseType: 'blob' }).then(r => r.data as Blob),
+    onSuccess: (blob) => openPdfBlob(blob, 'Ticket.pdf'),
   })
 
   // Acción: descargar/ver PDF DGI

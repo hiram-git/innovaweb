@@ -23,6 +23,7 @@ trait ReciboData
                     FECEMIS, FECEMISS,
                     ISNULL(TIPOFACTURA,'')   AS TIPOFACTURA,
                     ISNULL(MONTOBRU,0)       AS MONTOBRU,
+                    ISNULL(MONTOSUB,0)       AS MONTOSUB,
                     ISNULL(MONTODES,0)       AS MONTODES,
                     ISNULL(MONTOIMP,0)       AS MONTOIMP,
                     ISNULL(MONTOTOT,0)       AS MONTOTOT,
@@ -67,7 +68,8 @@ trait ReciboData
                     ISNULL(MONTODESCUENTO,0) AS MONTODESCUENTO,
                     ISNULL(PORDES,0)         AS PORDES,
                     ISNULL(IMPPOR,0)         AS IMPPOR,
-                    ISNULL(MONTOIMP,0)       AS MONTOIMP
+                    ISNULL(MONTOIMP,0)       AS MONTOIMP,
+                    ISNULL(TOTAL,0)          AS TOTAL
              FROM TRANSACCDETALLES
              WHERE CONTROL = ? AND COMPONENTE = 0
              ORDER BY FECHORA",

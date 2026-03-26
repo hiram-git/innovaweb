@@ -4,10 +4,12 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Services\CadenaControlService;
+use App\Services\TicketPdfService;
 use App\Traits\ErpInsert;
 use App\Traits\ReciboData;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -21,7 +23,10 @@ class PedidoController extends Controller
 {
     use ErpInsert, ReciboData;
 
-    public function __construct(private readonly CadenaControlService $cadena) {}
+    public function __construct(
+        private readonly CadenaControlService $cadena,
+        private readonly TicketPdfService     $ticketPdf,
+    ) {}
 
     public function recibo(string $id): JsonResponse
     {
@@ -31,6 +36,20 @@ class PedidoController extends Controller
             return response()->json(['message' => 'Pedido no encontrado.'], 404);
         }
         return response()->json(['data' => $data]);
+    }
+
+    public function ticketPdf(string $id): Response
+    {
+        $control = base64_decode($id);
+        $data = $this->buildRecibo($control);
+        if (! $data || $data['maestro']?->TIPTRAN !== 'PEDxCLI') {
+            abort(404, 'Pedido no encontrado.');
+        }
+        $pdf = $this->ticketPdf->generar($data);
+        return response($pdf, 200, [
+            'Content-Type'        => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="PED_' . trim($data['maestro']->NUMREF ?? $id) . '.pdf"',
+        ]);
     }
 
     // ─────────────────────────────────────────────────────────────────────────

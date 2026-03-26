@@ -3,10 +3,12 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Services\CadenaControlService;
+use App\Services\TicketPdfService;
 use App\Traits\ErpInsert;
 use App\Traits\ReciboData;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 
 class PresupuestoController extends Controller
@@ -23,7 +25,24 @@ class PresupuestoController extends Controller
         return response()->json(['data' => $data]);
     }
 
-    public function __construct(private readonly CadenaControlService $cadena) {}
+    public function ticketPdf(string $id): Response
+    {
+        $control = base64_decode($id);
+        $data = $this->buildRecibo($control);
+        if (! $data || $data['maestro']?->TIPTRAN !== 'PRE') {
+            abort(404, 'Presupuesto no encontrado.');
+        }
+        $pdf = $this->ticketPdf->generar($data);
+        return response($pdf, 200, [
+            'Content-Type'        => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="PRE_' . trim($data['maestro']->NUMREF ?? $id) . '.pdf"',
+        ]);
+    }
+
+    public function __construct(
+        private readonly CadenaControlService $cadena,
+        private readonly TicketPdfService     $ticketPdf,
+    ) {}
 
     public function index(Request $request): JsonResponse
     {
